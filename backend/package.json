@@ -1,0 +1,16 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "Personal AI Agent V1",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node scripts/killPort.js 4000 && nodemon src/server.js",
+    "verify": "node scripts/verifyCodebase.js",
+    "postinstall": "node scripts/installFonts.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module"
+}
