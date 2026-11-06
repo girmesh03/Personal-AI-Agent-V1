@@ -10,6 +10,8 @@ import { isDbConnected, getDbStatus } from '../database/connection.js';
 import authRoutes from '../../modules/identity/http/authRoutes.js';
 import profileRoutes from '../../modules/identity/http/profileRoutes.js';
 import assetRoutes from '../../modules/assets/http/assetRoutes.js';
+import threadRoutes from '../../modules/conversations/http/threadRoutes.js';
+import chatRoutes from '../../routes/chatRoutes.js';
 
 const router = Router();
 
@@ -46,5 +48,17 @@ router.use('/user', profileRoutes);
  * Mounts: /api/v1/assets/*
  */
 router.use('/assets', assetRoutes);
+
+/**
+ * Conversation thread and message pagination routes.
+ * Mounts: /api/v1/threads/*
+ */
+router.use('/threads', threadRoutes);
+
+/**
+ * Backward-compatibility chat routes.
+ * Mounts: /api/v1/chat/*
+ */
+router.use('/chat', chatRoutes);
 
 export default router;

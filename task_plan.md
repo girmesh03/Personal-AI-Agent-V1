@@ -6,7 +6,7 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
 Deliver a fully verified, production-grade Personal AI Agent V1 with provider-neutral LangChain/LangGraph architecture, single root package manifest, protected MUI theme, durable multimodal chat lifecycle, Postman-style backend API integration test suite, and complete functionality preservation across all 214 historical V0 source sections.
 
 ## Next Step
-Task 4.2: Cursor-based message pagination and thread management APIs.
+Task 4.3: Turn lifecycle service (normal send, retry, edit, branch, continue).
 
 ## Current Phase
 Phase 4: Durable Threads, Turns, Messages, Events - in_progress
@@ -59,7 +59,7 @@ Phase 4: Durable Threads, Turns, Messages, Events - in_progress
 
 ### Phase 4: Durable Threads, Turns, Messages, Events
 - [x] Task 4.1: Thread, Turn, Message, and MessageBranch persistence models (non-monolithic) (Completed & Verified - 9/9 passing)
-- [ ] Task 4.2: Cursor-based message pagination and thread management APIs
+- [x] Task 4.2: Cursor-based message pagination and thread management APIs (Completed & Verified - 11/11 passing)
 - [ ] Task 4.3: Turn lifecycle service (normal send, retry, edit, branch, continue)
 - [ ] Task 4.4: RunEvent durable event log with sequence cursors for stream replay
 - [ ] Task 4.5: Conversation and message API tests

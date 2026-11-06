@@ -105,7 +105,7 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
 ### Phase 4: Durable Threads, Turns, Messages, Events
 - **Status:** in_progress
 - **Branch:** `phase-4-conversations` (branched from `main` at `94dcecf`)
-- **Current Task:** Task 4.2 — Cursor-based message pagination and thread management APIs
+- **Current Task:** Task 4.3 — Turn lifecycle service (normal send, retry, edit, branch, continue)
 - **Completed Tasks:**
   - **Task 4.1 — Thread, Turn, Message, and MessageBranch Persistence Models:**
     - Defined `CONVERSATION_CONSTANTS` in `backend/src/utils/constants.js`.
@@ -115,6 +115,15 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
     - Implemented `Message` model (`modules/conversations/persistence/Message.js`, domain alias, model bridge) supporting structured multimodal parts (`text`, `image`, `audio`, `document`, `tool_call`, `tool_result`, `reasoning_status`, `source_citation`), asset attachment bindings, `(createdAt, _id)` cursor pagination index, and full-text search index.
     - Implemented `AgentRun` model (`modules/conversations/persistence/AgentRun.js`, domain alias, model bridge) and `RunEvent` model (`modules/conversations/persistence/RunEvent.js`, domain alias, model bridge) with 7-day TTL expiration index for stream replay and reconnection.
     - Implemented integration test suite (`tests/api/conversation-models.test.js`) verifying 9/9 tests across 6 test suites. Added `test:conversation-models` script to `package.json`. Full regression: 145/145 passing across 13 suites.
+  - **Task 4.2 — Cursor-Based Message Pagination and Thread Management APIs:**
+    - Created Zod validation schemas in `backend/src/modules/conversations/http/conversationSchemas.js` and compatibility bridge `backend/src/validations/chatValidation.js`.
+    - Implemented `threadService.js` supporting thread creation with automatic root branch provisioning (`main`), thread listing with pagination/filters/sorting, thread retrieval with uniform 404 isolation, thread updates, archive/restore lifecycle transitions, cascading soft deletion, bidirectional cursor pagination (`(createdAt, _id)` encoded as URL-safe Base64 JSON `{ c, i }`), branch listing, branch forking, and active branch switching.
+    - Implemented `threadController.js` wrapped in `asyncHandler` with standard JSON envelopes.
+    - Implemented `threadRoutes.js` mounted at `/api/v1/threads` and legacy bridge `routes/chatRoutes.js` and `controllers/chatController.js` mounted at `/api/v1/chat`.
+    - Implemented dedicated integration test suite `tests/api/thread-management.test.js` (11/11 tests passing in 82.1s).
+    - Added `"test:threads"` script to `package.json`.
+    - Verified full API regression: 156/156 tests passing across 14 test suites in 185s.
+    - Quality verification: 0 lint errors, 1,513 client modules transformed in 18.1s. Clean working tree.
 - **Completed Tasks:**
   - **Task 2.1 — Database Connection & Identity/Session Models:** Implemented MongoDB lifecycle engine, base schema options, User domain model with bcrypt password hashing, Session registry with token rotation and breach detection, AuthIdentity model, and integration test suite (`tests/api/identity-models.test.js`). Approved and committed on `phase-2-identity-and-sessions` (commit `f6a5a2a`).
   - **Task 2.2 — Authentication Service, Controllers, and Google OAuth 2.0:** Implemented token service, Zod request validation middleware, auth schemas, name derivation, Google OAuth 2.0 with HMAC signed state parameter, auth service, auth controller, auth routes, and native HTTP integration test suite (`tests/api/auth.test.js`). Approved and committed on `phase-2-identity-and-sessions` (commit `4dfeb59`).
@@ -288,7 +297,8 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
 | Asset Download & Lifecycle | `npm run test:download` | 15 passed | 15/15 passed in 34.2s | PASS |
 | Phase 3 Acceptance Suite | `npm run test:asset-suite` | 10 passed | 10/10 passed in 51.2s | PASS |
 | Conversation Models | `npm run test:conversation-models` | 9 passed | 9/9 passed in 35.7s | PASS |
-| Full API Test Suite | `npm run test:api` | 145 passed | 145/145 passed in 133.8s | PASS |
+| Thread Management APIs | `npm run test:threads` | 11 passed | 11/11 passed in 82.1s | PASS |
+| Full API Test Suite | `npm run test:api` | 156 passed | 156/156 passed in 185s | PASS |
 | Quality Verification | `npm run verify` | Lint & Build pass | 0 lint errors, 1,513 client modules built | PASS |
 | Client Dist Cleanup | `npm run clean:client` | Clean client/dist/ | Clean working tree | PASS |
 
@@ -308,8 +318,8 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
 ## 5-Question Reboot Check
 | Question | Answer |
 |----------|--------|
-| Where am I? | Phase 4: Durable Threads, Turns, Messages, Events, Task 4.1 Completed & Verified |
-| Where am I going? | Task 4.2: Cursor-based message pagination and thread management APIs |
+| Where am I? | Phase 4: Durable Threads, Turns, Messages, Events, Task 4.2 Completed & Verified |
+| Where am I going? | Task 4.3: Turn lifecycle service (normal send, retry, edit, branch, continue) |
 | What's the goal? | Implement Personal AI Agent V1 (Operon) per master specification with full functionality preservation, correct architecture, and owner review gates |
-| What have I learned? | Deconstructed conversation persistence completely eliminates unbounded array anti-pattern. Thread, MessageBranch, Turn, Message, AgentRun, and RunEvent models support atomic generation lease locks, sparse idempotency, multimodal parts, and cursor pagination tuple (createdAt, _id). Full regression suite passes with 145/145 tests across 13 suites. |
-| What have I done? | Fast-forward merged Phase 3 into main (commit 94dcecf), pushed to origin/main, deleted local phase-3 branch, created dedicated branch phase-4-conversations. Implemented Task 4.1 data models (Thread, MessageBranch, Turn, Message, AgentRun, RunEvent, bridges, domain aliases), verified 9/9 unit/integration tests and 145/145 full regression tests. Verified 0 lint errors and clean Vite client build. |
+| What have I learned? | Cursor pagination using Base64-encoded tuple { c: ISOString, i: ObjectId } over indexed (createdAt, _id) guarantees deterministic, stable chronological slices across active conversation streams. Automatic root branch provisioning atomically links thread.activeBranchId upon thread creation. Full regression suite passes with 156/156 tests across 14 suites. |
+| What have I done? | Implemented Task 4.2: threadService.js, threadController.js, threadRoutes.js, conversationSchemas.js, compatibility bridges (chatRoutes.js, chatController.js, chatValidation.js), and tests/api/thread-management.test.js. Added test:threads script. Verified 11/11 tests pass and 156/156 full regression tests pass. Verified 0 lint errors and clean Vite client build. |

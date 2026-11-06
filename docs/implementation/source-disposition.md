@@ -27,7 +27,7 @@
 | 12 | `backend/src/middleware/validate.js` | `backend/src/infrastructure/http/middleware/validate.js` | Request body, query, and param validation middleware using Zod schemas. | Implemented (Phase 2, Task 2.2) |
 | 13 | `backend/src/routes/authRoutes.js` | `backend/src/modules/identity/http/authRoutes.js` | Routes for register, login, logout, refresh, and Google OAuth 2.0. | Implemented (Phase 2, Task 2.2) |
 | 14 | `backend/src/routes/branchRoutes.js` | `backend/src/modules/operations/branches/http/branchRoutes.js` | Branch CRUD, archival/restoration, metrics, history within isolated domain module. | Pending |
-| 15 | `backend/src/routes/chatRoutes.js` | Split: `modules/conversations/http/threadRoutes.js`, `messageRoutes.js`, `runsRoutes.js` | Thread lifecycle, message pagination, and agent run execution routes. | Pending |
+| 15 | `backend/src/routes/chatRoutes.js` | `modules/conversations/http/threadRoutes.js` (bridge: `backend/src/routes/chatRoutes.js`) | Thread lifecycle, message pagination, and agent run execution routes. | Implemented (Phase 4, Task 4.2) |
 | 16 | `backend/src/routes/dashboardRoutes.js` | `backend/src/modules/dashboard/http/dashboardRoutes.js` | General personal AI metrics and activity; operations module widgets conditional. | Pending |
 | 17 | `backend/src/routes/index.js` | `backend/src/infrastructure/http/routes.js` | Master API v1 route mounting and module feature-flag enablement. | Implemented (Phase 1) |
 | 18 | `backend/src/routes/reportRoutes.js` | `backend/src/modules/operations/reports/http/reportRoutes.js` | Operational inspection report routes, checklist capture, export, and sharing. | Pending |
@@ -50,7 +50,7 @@
 | 42 | `backend/src/assets/fonts/fonts.conf` | `backend/src/assets/fonts/fonts.conf` | Fontconfig XML configuration with Ethiopic fallback mappings. | Protected |
 | 43 | `backend/src/controllers/authController.js` | `backend/src/modules/identity/http/authController.js` | Controller for user authentication, session creation, refresh, and logout. | Implemented (Phase 2, Task 2.2) |
 | 44 | `backend/src/controllers/branchController.js` | `backend/src/modules/operations/branches/http/branchController.js` | Controller for branch operations and metrics within domain module. | Pending |
-| 45 | `backend/src/controllers/chatController.js` | Split: `conversations/application/*`, `agent/application/runService.js` | Decoupled conversation management, stream generation, and run orchestration. | Pending |
+| 45 | `backend/src/controllers/chatController.js` | `backend/src/modules/conversations/http/threadController.js` (bridge: `backend/src/controllers/chatController.js`) | Decoupled conversation management, cursor pagination, and branch orchestration. | Implemented (Phase 4, Task 4.2) |
 | 46 | `backend/src/controllers/dashboardController.js` | `backend/src/modules/dashboard/http/dashboardController.js` | Controller for aggregated dashboard data. | Pending |
 | 47 | `backend/src/controllers/reportController.js` | `backend/src/modules/operations/reports/http/reportController.js` | Controller for operational inspection reports and dossier exports. | Pending |
 | 48 | `backend/src/controllers/sttController.js` | `backend/src/modules/audio/http/speechController.js` | Controller for audio transcription requests. | Pending |
@@ -64,7 +64,7 @@
 | 56 | `backend/src/tools/agentTools.js` | Split: `modules/agent/tools/registry.js`, `core/*`, `operations/*` | Modular tool definitions with Zod schemas, runtime context, and HITL gates. | Pending |
 | 57 | `backend/src/validations/authValidation.js` | `backend/src/modules/identity/http/authSchemas.js` | Zod validation schemas for auth endpoints. | Implemented (Phase 2, Task 2.2) |
 | 58 | `backend/src/validations/branchValidation.js` | `backend/src/modules/operations/branches/http/branchSchemas.js` | Zod validation schemas for branch endpoints. | Pending |
-| 59 | `backend/src/validations/chatValidation.js` | `backend/src/modules/conversations/http/conversationSchemas.js` | Zod schemas for thread creation, messages, pagination, retry, and edit. | Pending |
+| 59 | `backend/src/validations/chatValidation.js` | `backend/src/modules/conversations/http/conversationSchemas.js` (bridge: `backend/src/validations/chatValidation.js`) | Zod schemas for thread creation, messages, pagination, retry, and edit. | Implemented (Phase 4, Task 4.2) |
 | 60 | `backend/src/validations/reportValidation.js` | `backend/src/modules/operations/reports/http/reportSchemas.js` | Zod validation schemas for inspection reports. | Pending |
 | 61 | `backend/src/validations/userValidation.js` | `backend/src/modules/identity/http/profileSchemas.js` | Zod schemas for user profile updates and provider credentials. | Pending |
 

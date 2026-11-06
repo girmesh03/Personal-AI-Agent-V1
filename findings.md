@@ -389,3 +389,29 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
    - `npm run test:conversation-models`: 9/9 tests passing in 35.7s.
    - `npm run test:api`: 145/145 tests passing across 13 test suites in 133.8s.
    - `npm run verify`: 0 lint errors, 1,513 modules transformed in 18.1s. Clean working tree.
+
+
+---
+
+## 23. Task 4.2: Cursor-Based Message Pagination and Thread Management APIs
+
+### Key Implementation Findings & Defenses
+1. **Thread Lifecycle & Automatic Root Branch:**
+   - `createThread` atomically creates the thread document and provisions an initial root branch (`main`, `isRoot: true`, `isActive: true`), linking `thread.activeBranchId = rootBranch._id`.
+   - Thread CRUD endpoints support title renaming, pinned status toggle, config overrides (model, temperature, systemPrompt), archiving/restoring, and cascading soft-deletion (`isDeleted: true`).
+2. **Cursor-Based Message Pagination:**
+   - In accordance with Master Specification Section 10 & 11, message list queries use deterministic cursor tuples `(createdAt, _id)` encoded in URL-safe Base64 JSON `{ c: ISOString, i: ObjectId }`.
+   - Backward scrolling (history traversal) fetches descending chronological records (`createdAt < c` or equal timestamp with `_id < i`) with `limit + 1` to compute `hasMore`, and reverses the final array to present a natural chronological timeline to the frontend.
+3. **Branch Forking & Active Branch Switching:**
+   - Users can fork conversation branches via `POST /api/v1/threads/:id/branches` specifying a `forkTurnId` and `forkMessageId`.
+   - Active branch switching via `POST /api/v1/threads/:id/branches/:branchId/switch` safely updates `thread.activeBranchId` ensuring subsequent turns and messages attach to the selected branch.
+4. **Strict User Isolation (NFR-SEC-004) & 401 Unauthenticated:**
+   - Every thread operation enforces server-derived owner scoping `req.user.id`.
+   - Probing or mutating foreign threads returns a uniform 404 `NOT_FOUND` to prevent identifier enumeration.
+   - Missing/invalid session returns standard 401 `UNAUTHENTICATED`.
+5. **Legacy Compatibility Bridges:**
+   - Historical routes `/api/v1/chat` and legacy controllers/validations (`chatController.js`, `chatValidation.js`) route cleanly to the thread service and models.
+6. **Verification Evidence:**
+   - `npm run test:threads`: 11/11 tests passing in 82.1s.
+   - `npm run test:api`: 156/156 tests passing across 14 test suites in 185s.
+   - `npm run verify`: 0 lint errors, 1,513 modules transformed in 18.1s. Clean working tree.
