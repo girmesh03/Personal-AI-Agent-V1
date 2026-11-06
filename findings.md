@@ -71,3 +71,35 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
 - **Frontend Verification & Owner Approval Gate:**
   - Static checks, ESLint, type-checking, and production Vite builds run automatically.
   - **MANDATORY GATE:** Antigravity browser testing is strictly owner-controlled. The agent must NEVER launch or automate browser testing without preparing the test plan and receiving explicit owner approval.
+
+## 7. Base Express Application Bootstrap & Security Architecture
+- **Environment Schema (`config/env.js`):**
+  - Fully schema-validated via Zod. Replaces V0's unvalidated array checks with strict type coercion, defaults, duration parsing (`parseDurationToMs`), and test environment fallbacks.
+  - Deeply frozen `env` object prevents runtime configuration mutation.
+- **Error Architecture (`shared/errors/AppError.js`):**
+  - Inherits from `AppError` base class with `isOperational = true`, `statusCode`, `errorCode`, and `details`.
+  - Invariant strictly enforced: 401 status is `UNAUTHENTICATED` (never `UNAUTHORIZED`).
+  - Compatibility bridges established for `errors/CustomError.js`, `middleware/errorHandler.js`, `middleware/notFoundHandler.js`, and `routes/index.js`.
+- **Security Middlewares (`app.js`):**
+  - Standard Helmet security headers (`nosniff`, `SAMEORIGIN`, etc.).
+  - CORS with exact allowed origins from `CLIENT_ORIGIN` plus local dev ports and production `*.vercel.app`.
+  - JSON and URL-encoded body parsers with 10MB bounds.
+  - **Prohibition Enforced:** Direct public static upload serving (`express.static('/uploads')`) is omitted completely. All asset access will require authenticated, owner-scoped download routes.
+- **Native Postman-Style HTTP Integration Harness (`tests/api/health.test.js`):**
+  - Real over-the-wire HTTP requests to ephemeral port using native Node.js test runner (`node:test`) and native `fetch`.
+  - 6 test cases covering canonical `/api/v1/health`, `/health`, `/api/health`, 404 structured envelope, Helmet security headers, and CORS credentials.
+  - Extraneous `/healthz` container alias was removed to strictly adhere to the master specification and historical contract.
+  - 100% pass rate in < 2 seconds.
+
+## 8. TypeScript Declaration & IDE Workspace Configuration
+- **Type Declaration Strategy:**
+  - Standardized on official `@types/*` devDependencies for plain JavaScript libraries lacking built-in types:
+    `@types/node`, `@types/express`, `@types/morgan`, `@types/cors`, `@types/cookie-parser`, `@types/jsonwebtoken`, `@types/bcryptjs`, `@types/multer`.
+  - Installed via native `npm install -D` without hardcoded versions.
+- **Root Workspace Configuration (`jsconfig.json`):**
+  - Configured ES2022 / NodeNext module resolution, `checkJs: false`, and `skipLibCheck: true`.
+  - Resolves all implicit-any diagnostics while providing full autocomplete, parameter hints, and type safety for developer ergonomics.
+
+## 9. Phase 1 Completion & Gate Merge Review
+- **Deliverables:** Single root manifest and lockfile, consolidated dependencies, build and lint pipelines, base Express 5 app, Zod environment validation, operational error handling, Winston structured logging, native API health test suite, and cloud deployment manifests (`render.yaml`, `vercel.json`).
+- **Gate Status:** 100% verified and approved by owner. Merged to `main` via fast-forward merge. Ready for Phase 2 initialization.

@@ -13,23 +13,23 @@
 
 | # | V0 Source File Section | Target V1 Destination | Architectural Action & Preservation Scope | Status |
 |---:|:---|:---|:---|:---|
-| 1 | `backend/src/app.js` | `backend/src/app.js` | Express 5 composition, security headers, exact CORS, middleware pipeline, private upload routing (remove public static upload serving). | Pending |
-| 2 | `backend/src/server.js` | `backend/src/server.js` | Bootstrap, DB readiness, worker startup, SIGTERM/SIGINT signal handling, stream/job drain, graceful shutdown. | Pending |
+| 1 | `backend/src/app.js` | `backend/src/app.js` | Express 5 composition, security headers, exact CORS, middleware pipeline, private upload routing (remove public static upload serving). | Implemented (Phase 1) |
+| 2 | `backend/src/server.js` | `backend/src/server.js` | Bootstrap, DB readiness, worker startup, SIGTERM/SIGINT signal handling, stream/job drain, graceful shutdown. | Implemented (Phase 1) |
 | 3 | `backend/src/config/db.js` | `backend/src/infrastructure/database/connection.js` | Mongoose/Mongo connection lifecycle, pool management, worker and checkpointer connection sharing. | Pending |
-| 4 | `backend/src/config/env.js` | `backend/src/config/env.js` | Zod schema-based environment validation; parsing URLs, booleans, secrets, limits; fail closed. | Pending |
-| 5 | `backend/src/config/logger.js` | `backend/src/infrastructure/logging/logger.js` | Structured Winston logging, request correlation IDs, secret/prompt redaction; no plaintext credentials. | Pending |
+| 4 | `backend/src/config/env.js` | `backend/src/config/env.js` | Zod schema-based environment validation; parsing URLs, booleans, secrets, limits; fail closed. | Implemented (Phase 1) |
+| 5 | `backend/src/config/logger.js` | `backend/src/config/logger.js` | Structured Winston logging, request correlation IDs, secret/prompt redaction; no plaintext credentials. | Implemented (Phase 1) |
 | 6 | `backend/src/config/schemaOptions.js` | `backend/src/infrastructure/database/schemaOptions.js` | Shared serialization options (virtuals, getters, timestamps); safe projection rules. | Pending |
-| 7 | `backend/src/errors/CustomError.js` | `backend/src/shared/errors/AppError.js` | Typed application errors, normalized public HTTP error codes, security-safe error sanitization. | Pending |
+| 7 | `backend/src/errors/CustomError.js` | `backend/src/shared/errors/AppError.js` | Typed application errors, normalized public HTTP error codes, security-safe error sanitization. | Implemented (Phase 1) |
 | 8 | `backend/src/middleware/authMiddleware.js` | `backend/src/infrastructure/http/middleware/requireUser.js` | Server-derived user identity, session validation, cookie parsing; reject client owner claims. | Pending |
-| 9 | `backend/src/middleware/errorHandler.js` | `backend/src/infrastructure/http/middleware/errorHandler.js` | Central error mapping, request correlation, safe client-facing errors without stack traces. | Pending |
-| 10 | `backend/src/middleware/notFoundHandler.js` | `backend/src/infrastructure/http/middleware/notFound.js` | Consistent API 404 handler, enumeration prevention. | Pending |
+| 9 | `backend/src/middleware/errorHandler.js` | `backend/src/infrastructure/http/middleware/errorHandler.js` | Central error mapping, request correlation, safe client-facing errors without stack traces. | Implemented (Phase 1) |
+| 10 | `backend/src/middleware/notFoundHandler.js` | `backend/src/infrastructure/http/middleware/notFoundHandler.js` | Consistent API 404 handler, enumeration prevention. | Implemented (Phase 1) |
 | 11 | `backend/src/middleware/uploadMiddleware.js` | `backend/src/modules/assets/http/uploadMiddleware.js` | Streaming multipart parser, MIME magic byte sniffing, file size bounds, safe temp paths. | Pending |
 | 12 | `backend/src/middleware/validate.js` | `backend/src/shared/validation/validateRequest.js` | Request body, query, and param validation middleware using Zod schemas. | Pending |
 | 13 | `backend/src/routes/authRoutes.js` | `backend/src/modules/identity/http/authRoutes.js` | Routes for register, login, logout, refresh, and Google OAuth 2.0. | Pending |
 | 14 | `backend/src/routes/branchRoutes.js` | `backend/src/modules/operations/branches/http/branchRoutes.js` | Branch CRUD, archival/restoration, metrics, history within isolated domain module. | Pending |
 | 15 | `backend/src/routes/chatRoutes.js` | Split: `modules/conversations/http/threadRoutes.js`, `messageRoutes.js`, `runsRoutes.js` | Thread lifecycle, message pagination, and agent run execution routes. | Pending |
 | 16 | `backend/src/routes/dashboardRoutes.js` | `backend/src/modules/dashboard/http/dashboardRoutes.js` | General personal AI metrics and activity; operations module widgets conditional. | Pending |
-| 17 | `backend/src/routes/index.js` | `backend/src/infrastructure/http/routes.js` | Master API v1 route mounting and module feature-flag enablement. | Pending |
+| 17 | `backend/src/routes/index.js` | `backend/src/infrastructure/http/routes.js` | Master API v1 route mounting and module feature-flag enablement. | Implemented (Phase 1) |
 | 18 | `backend/src/routes/reportRoutes.js` | `backend/src/modules/operations/reports/http/reportRoutes.js` | Operational inspection report routes, checklist capture, export, and sharing. | Pending |
 | 19 | `backend/src/routes/sttRoutes.js` | `backend/src/modules/audio/http/speechRoutes.js` | Audio transcription routes using capability-qualified remote speech adapters. | Pending |
 | 20 | `backend/src/routes/userRoutes.js` | Split: `identity/http/profileRoutes.js`, `providers/http/providerRoutes.js` | User profile, preferences, and provider BYOK configuration routes. | Pending |
@@ -40,8 +40,8 @@
 | 25 | `backend/src/services/ttsService.js` | `backend/src/modules/audio/ttsService.js` | Optional remote TTS synthesis with cost controls and user consent. | Pending |
 | 26 | `backend/src/utils/attachmentProcessor.js` | Split: `assets/processing/assetProcessor.js`, `documents/ingestion/*` | Deterministic file extraction, metadata extraction, text normalization, and chunking. | Pending |
 | 27 | `backend/src/utils/audioChunker.js` | `backend/src/modules/audio/audioChunker.js` | Deterministic FFmpeg media chunking and conversion utilities. | Pending |
-| 28 | `backend/src/utils/constants.js` | Split: `config/limits.js`, `shared/constants/*` | System limits, HTTP status codes, action categories, role definitions. | Pending |
-| 29 | `backend/src/utils/errorFormatter.js` | `backend/src/shared/errors/providerErrorMapper.js` | Provider-specific error mapping into standardized domain errors. | Pending |
+| 28 | `backend/src/utils/constants.js` | `backend/src/utils/constants.js` | System limits, HTTP status codes, action categories, role definitions. | Implemented (Phase 1) |
+| 29 | `backend/src/utils/errorFormatter.js` | `backend/src/utils/errorFormatter.js` | Provider-specific error mapping into standardized domain errors. | Implemented (Phase 1) |
 | 30 | `backend/src/utils/ethiopianCalendar.js` | `backend/src/modules/operations/calendar/ethiopianCalendar.js` | Ethiopian-Gregorian dual calendar conversion and holiday calculation. | Pending |
 | 31 | `backend/src/utils/promptAssembler.js` | Split: `modules/agent/context/contextAssembler.js`, system policy | Dynamic prompt construction from directives, recent turns, and module skills. | Pending |
 | 32 | `backend/src/utils/token.js` | `backend/src/modules/identity/security/tokenService.js` | JWT signing, verification, and refresh token hashing. | Pending |

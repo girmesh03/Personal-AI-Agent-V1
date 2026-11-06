@@ -62,6 +62,14 @@ The V1 application operates under strict single-root manifest dependency governa
 | `eslint-plugin-react-hooks` | `^7.1.1` | ESLint rules for React Hooks rules enforcement | MIT |
 | `eslint-plugin-react-refresh` | `^0.5.7` | ESLint rules for Vite React Fast Refresh | MIT |
 | `globals` | `^17.14.0` | Global identifier definitions for browser and Node | MIT |
+| `@types/node` | `^26.6.6` | TypeScript declarations for Node.js built-ins and runtime | MIT |
+| `@types/express` | `^5.0.6` | TypeScript declarations for Express 5 | MIT |
+| `@types/morgan` | `^1.9.10` | TypeScript declarations for Morgan HTTP logger | MIT |
+| `@types/cors` | `^2.8.19` | TypeScript declarations for CORS middleware | MIT |
+| `@types/cookie-parser` | `^1.4.10` | TypeScript declarations for Cookie Parser | MIT |
+| `@types/jsonwebtoken` | `^9.0.10` | TypeScript declarations for JSON Web Token | MIT |
+| `@types/bcryptjs` | `^2.4.6` | TypeScript declarations for Bcryptjs | MIT |
+| `@types/multer` | `^2.3.0` | TypeScript declarations for Multer file upload | MIT |
 | `@types/react` | `^19.3.0` | TypeScript definitions for React (used by IDE/ESLint) | MIT |
 | `@types/react-dom` | `^19.3.0` | TypeScript definitions for React DOM | MIT |
 | `nodemon` | `^3.1.14` | Process monitor for automated backend server restart | MIT |
