@@ -357,3 +357,35 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
   - 10/10 acceptance tests passing.
   - Full regression: 136/136 tests passing across all 12 test suites.
   - Static analysis & build: 0 lint errors, 1,513 client modules transformed in 2.45s.
+
+---
+
+## 22. Task 4.1: Deconstructed Conversation Persistence Architecture (Phase 4)
+
+### Background & Architectural Mandate
+- In V0, conversations were stored in a monolithic `Chat.messages` array inside a single MongoDB document (`models/Chat.js`).
+- As conversations grew with multimodal attachments and long tool execution turns, single document growth risked MongoDB's 16MB BSON document boundary, degraded write performance (document relocation), and made cursor pagination across branches impossible.
+- Master Specification Sections 10, 11, 16 (Row 53), and 26.5.4 mandate replacing the single large array with a normalized persistence structure:
+  - `Thread`: Conversation metadata, title, pinning, archival, active branch, and preferences.
+  - `MessageBranch`: Lineage and fork points (`forkTurnId`, `forkMessageId`) enabling history branches without mutating parent branches.
+  - `Turn`: Logical user request + assistant response(s), monotonic sequence per branch, sparse idempotency key constraint, and atomic `runLock` lease.
+  - `Message`: Independent document with multimodal parts (`text`, `image`, `audio`, `document`, `tool_call`, `tool_result`, `reasoning_status`, `source_citation`), asset attachments, and `(createdAt, _id)` cursor pagination index.
+  - `AgentRun`: Generation/workflow execution state, model/provider tracking, token usage, cancellation reason, and lease locking.
+  - `RunEvent`: Ordered durable event log for stream replay and reconnection with sequence numbers and 7-day TTL expiration index.
+
+### Key Implementation Findings & Defenses
+1. **Backward Compatibility Bridges:**
+   - Legacy V0 references to `Chat` (`import { Chat } from '../models/Chat.js'`) now resolve to `Thread` via `backend/src/models/Chat.js`.
+   - `Thread.virtual('user')` provides getter/setter mapping to `owner` for seamless backward compatibility.
+2. **Sparse Idempotency Enforcement:**
+   - Network retries from clients will not create duplicate user turns due to compound unique sparse index `{ threadId: 1, idempotencyKey: 1 }`.
+3. **Atomic Single-Generation Lease Locking:**
+   - Single generation run per branch is enforced via atomic MongoDB query:
+     `{ _id: turnId, $or: [{ 'runLock.holderRunId': null }, { 'runLock.leaseExpiresAt': { $lt: now } }, { 'runLock.holderRunId': runId }] }`.
+   - Protects against duplicate concurrent model generations.
+4. **Stable Cursor Pagination:**
+   - Index tuple `{ threadId: 1, createdAt: 1, _id: 1 }` guarantees deterministic pagination even when new messages are actively appended.
+5. **Verification Evidence:**
+   - `npm run test:conversation-models`: 9/9 tests passing in 35.7s.
+   - `npm run test:api`: 145/145 tests passing across 13 test suites in 133.8s.
+   - `npm run verify`: 0 lint errors, 1,513 modules transformed in 18.1s. Clean working tree.

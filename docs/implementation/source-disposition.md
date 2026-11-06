@@ -58,7 +58,7 @@
 | 50 | `backend/src/jobs/sweeper.js` | `backend/src/jobs/reconciliation/storageReconciliationJob.js` | Database-backed asset cleanup, outbox reconciliation, orphan file pruning. | Pending |
 | 51 | `backend/src/models/Audio.js` | `backend/src/modules/assets/persistence/Asset.js` (bridge: `backend/src/models/Audio.js`, `backend/src/models/Asset.js`) | Unified asset model with audio representation subdocuments and backward-compatible virtuals. | Implemented (Phase 3, Task 3.1) |
 | 52 | `backend/src/models/Branch.js` | `backend/src/modules/operations/branches/persistence/Branch.js` | Branch schema and indices under operations module. | Pending |
-| 53 | `backend/src/models/Chat.js` | Replaced by `Thread.js`, `Turn.js`, `Message.js`, `MessageBranch.js` | Deconstructed conversation persistence models (no unbounded message arrays). | Pending |
+| 53 | `backend/src/models/Chat.js` | Replaced by `Thread.js`, `Turn.js`, `Message.js`, `MessageBranch.js` | Deconstructed conversation persistence models (no unbounded message arrays). | Implemented (Phase 4, Task 4.1) |
 | 54 | `backend/src/models/Report.js` | `backend/src/modules/operations/reports/persistence/Report.js` | Operational inspection report schema and indices under operations module. | Pending |
 | 55 | `backend/src/models/User.js` | Split: `User.js`, `AuthIdentity.js`, `Session.js`, `ProviderConnection.js` | Normalized user identity, authentication identities, sessions, and encrypted BYOK keys. | Implemented (Phase 2, Task 2.1) |
 | 56 | `backend/src/tools/agentTools.js` | Split: `modules/agent/tools/registry.js`, `core/*`, `operations/*` | Modular tool definitions with Zod schemas, runtime context, and HITL gates. | Pending |

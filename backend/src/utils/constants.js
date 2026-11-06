@@ -236,6 +236,75 @@ export const CHAT_CONSTANTS = Object.freeze({
 });
 
 /**
+ * Deconstructed conversation lifecycle, thread, turn, message, and stream event constants (Phase 4).
+ * Single source of truth across persistence, serialization, pagination, and stream mappers.
+ * @constant
+ */
+export const CONVERSATION_CONSTANTS = Object.freeze({
+  THREAD_STATUSES: Object.freeze(['active', 'archived']),
+  DEFAULT_THREAD_TITLE: 'New Chat',
+  TURN_STATUSES: Object.freeze(['pending', 'in_progress', 'completed', 'failed', 'cancelled', 'awaiting_approval']),
+  MESSAGE_ROLES: Object.freeze(['user', 'assistant', 'system', 'tool']),
+  MESSAGE_STATUSES: Object.freeze(['sending', 'streaming', 'completed', 'failed', 'cancelled']),
+  PART_TYPES: Object.freeze([
+    'text',
+    'image',
+    'audio',
+    'document',
+    'tool_call',
+    'tool_result',
+    'reasoning_status',
+    'source_citation',
+  ]),
+  RUN_STATUSES: Object.freeze([
+    'accepted',
+    'started',
+    'waiting_approval',
+    'resumed',
+    'cancel_requested',
+    'cancelled',
+    'completed',
+    'failed',
+  ]),
+  EVENT_FAMILIES: Object.freeze([
+    'run.accepted',
+    'run.started',
+    'run.heartbeat',
+    'run.waiting_approval',
+    'run.resumed',
+    'run.cancel_requested',
+    'run.cancelled',
+    'run.completed',
+    'run.failed',
+    'message.started',
+    'message.text.start',
+    'message.text.delta',
+    'message.text.end',
+    'message.completed',
+    'message.status',
+    'tool.started',
+    'tool.input.delta',
+    'tool.awaiting_approval',
+    'tool.approved',
+    'tool.rejected',
+    'tool.completed',
+    'tool.failed',
+    'asset.processing',
+    'asset.ready',
+    'asset.failed',
+    'source.added',
+    'structured_data',
+    'usage.updated',
+    'title.updated',
+    'stream.reset',
+  ]),
+  DEFAULT_PAGE_SIZE: 20,
+  MAX_PAGE_SIZE: 100,
+  RUN_LEASE_DURATION_MS: 30000,
+  EVENT_RETENTION_SECONDS: 604800,
+});
+
+/**
  * Asset storage, media category, and private access constants (Phase 3).
  * @constant
  */

@@ -56,9 +56,8 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
   - **Phase 2 Gate Review & Fast-Forward Merge:** Approved by owner; fast-forward merged to `main` at `1f94414`; pushed to `origin/main`; local branch deleted.
 
 ### Phase 3: Private Asset and Document Foundation
-- **Status:** in_progress
-- **Branch:** `phase-3-assets-and-documents` (branched from `main` at `1f94414`)
-- **Current Task:** Phase 3 Gate & Owner Merge Review (All 6 tasks completed and verified)
+- **Status:** complete
+- **Branch:** `phase-3-assets-and-documents` -> merged to `main` (`94dcecf`), pushed to `origin/main`, local branch deleted.
 - **Completed Tasks:**
   - **Task 3.1 — Private Object Storage Abstraction & Unified Asset Model:**
     - Defined `ASSET_CONSTANTS` in `backend/src/utils/constants.js`.
@@ -102,6 +101,20 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
     - Fixed `Session.deleteMany({ userId })` field invariant.
     - Removed redundant route-level CSRF in `assetRoutes.js`.
     - Added granular test scripts to `package.json` and optimized test execution via `--import ./tests/setup.js` (136/136 tests passing in 126s).
+
+### Phase 4: Durable Threads, Turns, Messages, Events
+- **Status:** in_progress
+- **Branch:** `phase-4-conversations` (branched from `main` at `94dcecf`)
+- **Current Task:** Task 4.2 — Cursor-based message pagination and thread management APIs
+- **Completed Tasks:**
+  - **Task 4.1 — Thread, Turn, Message, and MessageBranch Persistence Models:**
+    - Defined `CONVERSATION_CONSTANTS` in `backend/src/utils/constants.js`.
+    - Implemented `Thread` model (`modules/conversations/persistence/Thread.js`, domain alias, model bridge, and legacy `Chat.js` bridge) with owner isolation, pin/archive/soft-delete lifecycle statics, and `Chat.user` backward-compatible virtuals.
+    - Implemented `MessageBranch` model (`modules/conversations/persistence/MessageBranch.js`, domain alias, model bridge) for conversation forking and history preservation without mutating parent branch.
+    - Implemented `Turn` model (`modules/conversations/persistence/Turn.js`, domain alias, model bridge) with monotonic sequence uniqueness, sparse `idempotencyKey` uniqueness to prevent duplicate submissions on retry, and atomic `acquireRunLock`/`releaseRunLock` lease management enforcing single generation runs.
+    - Implemented `Message` model (`modules/conversations/persistence/Message.js`, domain alias, model bridge) supporting structured multimodal parts (`text`, `image`, `audio`, `document`, `tool_call`, `tool_result`, `reasoning_status`, `source_citation`), asset attachment bindings, `(createdAt, _id)` cursor pagination index, and full-text search index.
+    - Implemented `AgentRun` model (`modules/conversations/persistence/AgentRun.js`, domain alias, model bridge) and `RunEvent` model (`modules/conversations/persistence/RunEvent.js`, domain alias, model bridge) with 7-day TTL expiration index for stream replay and reconnection.
+    - Implemented integration test suite (`tests/api/conversation-models.test.js`) verifying 9/9 tests across 6 test suites. Added `test:conversation-models` script to `package.json`. Full regression: 145/145 passing across 13 suites.
 - **Completed Tasks:**
   - **Task 2.1 — Database Connection & Identity/Session Models:** Implemented MongoDB lifecycle engine, base schema options, User domain model with bcrypt password hashing, Session registry with token rotation and breach detection, AuthIdentity model, and integration test suite (`tests/api/identity-models.test.js`). Approved and committed on `phase-2-identity-and-sessions` (commit `f6a5a2a`).
   - **Task 2.2 — Authentication Service, Controllers, and Google OAuth 2.0:** Implemented token service, Zod request validation middleware, auth schemas, name derivation, Google OAuth 2.0 with HMAC signed state parameter, auth service, auth controller, auth routes, and native HTTP integration test suite (`tests/api/auth.test.js`). Approved and committed on `phase-2-identity-and-sessions` (commit `4dfeb59`).
@@ -274,7 +287,8 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
 | Asset Provenance Tests | `npm run test:provenance` | 7 passed | 7/7 passed in 40.2s | PASS |
 | Asset Download & Lifecycle | `npm run test:download` | 15 passed | 15/15 passed in 34.2s | PASS |
 | Phase 3 Acceptance Suite | `npm run test:asset-suite` | 10 passed | 10/10 passed in 51.2s | PASS |
-| Full API Test Suite | `npm run test:api` | 136 passed | 136/136 passed in 126.8s | PASS |
+| Conversation Models | `npm run test:conversation-models` | 9 passed | 9/9 passed in 35.7s | PASS |
+| Full API Test Suite | `npm run test:api` | 145 passed | 145/145 passed in 133.8s | PASS |
 | Quality Verification | `npm run verify` | Lint & Build pass | 0 lint errors, 1,513 client modules built | PASS |
 | Client Dist Cleanup | `npm run clean:client` | Clean client/dist/ | Clean working tree | PASS |
 
@@ -289,12 +303,13 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
 | 2026-11-06T21:01 | getAssetById returned soft-deleted asset | 1 | Added isDeleted: false default filter to getAssetById in assetService.js |
 | 2026-11-06T21:15 | verifySignedDownloadToken returned assetId instead of payload.a | 1 | Mapped payload.assetId || payload.a and payload.userId || payload.u in downloadAsset |
 | 2026-11-06T21:16 | reconcileExpiredAssets checked ephemeral only | 1 | Added ephemeral to constants.RETENTION_POLICIES and used $in: ['temporary', 'ephemeral'] |
+| 2026-11-06T21:44 | Dummy Asset in conversation-models test missing required schema fields | 1 | Provided required originalName, sanitizedName, storagePath, and 64-char hex sha256 |
 
 ## 5-Question Reboot Check
 | Question | Answer |
 |----------|--------|
-| Where am I? | Phase 3: Private Asset and Document Foundation, Tasks 3.1 through 3.6 Complete & Verified |
-| Where am I going? | Phase 3 Gate & Owner Merge Review; then Phase 4 (Durable Threads, Turns, Messages, Events) |
+| Where am I? | Phase 4: Durable Threads, Turns, Messages, Events, Task 4.1 Completed & Verified |
+| Where am I going? | Task 4.2: Cursor-based message pagination and thread management APIs |
 | What's the goal? | Implement Personal AI Agent V1 (Operon) per master specification with full functionality preservation, correct architecture, and owner review gates |
-| What have I learned? | Phase 3 establishes a secure private asset subsystem: zero public static serving, MIME magic-byte enforcement, multi-representation derivation with provenance, HMAC signed download streaming, Scenario M binary purges, and automated background reconciliation. 136/136 tests passing across 12 suites. |
-| What have I done? | Completed Tasks 3.1 through 3.6. Implemented comprehensive acceptance test suite (`tests/api/asset-document-suite.test.js`), added `npm run test:asset-suite`, verified 10/10 acceptance tests passing and 136/136 regression tests passing. Built walkthrough artifacts and updated documentation. Ready for commit and owner review. |
+| What have I learned? | Deconstructed conversation persistence completely eliminates unbounded array anti-pattern. Thread, MessageBranch, Turn, Message, AgentRun, and RunEvent models support atomic generation lease locks, sparse idempotency, multimodal parts, and cursor pagination tuple (createdAt, _id). Full regression suite passes with 145/145 tests across 13 suites. |
+| What have I done? | Fast-forward merged Phase 3 into main (commit 94dcecf), pushed to origin/main, deleted local phase-3 branch, created dedicated branch phase-4-conversations. Implemented Task 4.1 data models (Thread, MessageBranch, Turn, Message, AgentRun, RunEvent, bridges, domain aliases), verified 9/9 unit/integration tests and 145/145 full regression tests. Verified 0 lint errors and clean Vite client build. |
