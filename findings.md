@@ -28,6 +28,9 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
   - Nested manifests exist: `backend/package.json` and `client/package.json` (and `client/package-lock.json`).
   - Master specification Section 6.3 mandates a single root `package.json` and single root `package-lock.json`. Nested manifests and lockfiles must be retired.
   - **Package Installation Policy:** Never hand-code version numbers in `package.json`. Always run native `npm install` from root so npm resolves current compatible versions and produces the root `package-lock.json`.
+  - **Cloud Deployment Architecture:**
+    - Render (`render.yaml`): `rootDir: .`, `buildCommand: npm install --include=optional`, `startCommand: npm run start:api`. Automatic Ethiopic fonts/FFmpeg permission install via root `postinstall`.
+    - Vercel (`vercel.json`): `buildCommand: npm run build:web`, `outputDirectory: client/dist`, `framework: vite`. Vercel builds from root and serves `client/dist`.
 - **Existing Scripts Accounting:**
   - `backend/scripts/installFonts.js`: Headless font and binary permission installer for Render/Docker. Wired to root `"postinstall": "node backend/scripts/installFonts.js"`.
   - `backend/scripts/killPort.js`: Cross-platform TCP port termination. Wired to root `"kill-ports": "node backend/scripts/killPort.js"` and pre-dev commands.

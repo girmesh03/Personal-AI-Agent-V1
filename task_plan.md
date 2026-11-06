@@ -6,7 +6,7 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
 Deliver a fully verified, production-grade Personal AI Agent V1 with provider-neutral LangChain/LangGraph architecture, single root package manifest, protected MUI theme, durable multimodal chat lifecycle, Postman-style backend API integration test suite, and complete functionality preservation across all 214 historical V0 source sections.
 
 ## Next Step
-Execute Task 1.1: Root Manifest Consolidation & Dependency Architecture on branch `phase-1-foundation`. Consolidate dependencies via native `npm install` (no hardcoded versions), wire existing scripts (`installFonts.js`, `killPort.js`, `cleanDist.js`), retire nested manifests, and verify build.
+Execute Task 1.2: Root package scripts & port management validation. Verify all scripts (`postinstall`, `kill-ports`, `clean:client`, `dev`, `build:web`, `lint`, `verify`) execute deterministically across Windows and Linux targets.
 
 ## Current Phase
 Phase 1: Root Foundation & Engineering Quality System - in_progress
@@ -29,7 +29,7 @@ Phase 1: Root Foundation & Engineering Quality System - in_progress
 - **Status:** complete
 
 ### Phase 1: Root Foundation & Engineering Quality System
-- [ ] Task 1.1: Root manifest consolidation via native `npm install` (no hardcoded versions), wire existing scripts (`installFonts.js`, `killPort.js`, `cleanDist.js`), remove nested manifests and client lockfile, update `render.yaml`, document `docs/architecture/dependency-catalog.md`
+- [x] Task 1.1: Root manifest consolidation via native `npm install` (no hardcoded versions), wire existing scripts (`installFonts.js`, `killPort.js`, `cleanDist.js`), remove nested manifests and client lockfile, update `render.yaml`, configure `vercel.json`, document `docs/architecture/dependency-catalog.md` (Approved & Committed)
 - [ ] Task 1.2: Root package scripts for dev, build, lint, backend test, port management
 - [ ] Task 1.3: Clean install verification into root `node_modules` and verify root `package-lock.json`
 - [ ] Task 1.4: Base Express application bootstrap (`backend/src/app.js`, `server.js`) with environment validation and health check

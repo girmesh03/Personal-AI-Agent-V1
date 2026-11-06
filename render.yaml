@@ -4,10 +4,10 @@ services:
     runtime: node
     plan: free
     region: oregon
-    rootDir: backend
-    buildCommand: npm install --include=optional && node scripts/installFonts.js
-    startCommand: npm start
+    rootDir: .
+    buildCommand: npm install --include=optional
+    startCommand: npm run start:api
     healthCheckPath: /api/v1/health
     envVars:
       - key: NODE_ENV
-        value: development
+        value: production
