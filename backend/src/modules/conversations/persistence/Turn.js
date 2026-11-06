@@ -72,7 +72,7 @@ const turnSchema = new mongoose.Schema(
     },
     idempotencyKey: {
       type: String,
-      default: null,
+      default: undefined,
       trim: true,
     },
     status: {
@@ -132,12 +132,12 @@ turnSchema.index(
   { unique: true, name: 'uniq_turn_thread_branch_sequence' }
 );
 
-// Idempotent submission guard: unique sparse per thread
+// Idempotent submission guard: unique per thread only when idempotencyKey is a non-null string
 turnSchema.index(
   { threadId: 1, idempotencyKey: 1 },
   {
     unique: true,
-    sparse: true,
+    partialFilterExpression: { idempotencyKey: { $type: 'string' } },
     name: 'uniq_turn_thread_idempotency',
   }
 );

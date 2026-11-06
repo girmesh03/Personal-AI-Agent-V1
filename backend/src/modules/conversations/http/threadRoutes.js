@@ -18,11 +18,16 @@ import {
   threadIdParamSchema,
   branchParamSchema,
 } from './conversationSchemas.js';
+import turnRoutes from './turnRoutes.js';
 
 const router = Router();
 
 // Enforce authentication across all conversation endpoints
 router.use(requireUser);
+
+// Mount turn subroutes for both :id and :threadId route parameter conventions
+router.use('/:id/turns', turnRoutes);
+router.use('/:threadId/turns', turnRoutes);
 
 // Thread collection routes
 router.post('/', validate(createThreadSchema), threadController.createThread);

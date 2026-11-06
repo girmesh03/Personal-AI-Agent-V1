@@ -64,7 +64,7 @@
 | 56 | `backend/src/tools/agentTools.js` | Split: `modules/agent/tools/registry.js`, `core/*`, `operations/*` | Modular tool definitions with Zod schemas, runtime context, and HITL gates. | Pending |
 | 57 | `backend/src/validations/authValidation.js` | `backend/src/modules/identity/http/authSchemas.js` | Zod validation schemas for auth endpoints. | Implemented (Phase 2, Task 2.2) |
 | 58 | `backend/src/validations/branchValidation.js` | `backend/src/modules/operations/branches/http/branchSchemas.js` | Zod validation schemas for branch endpoints. | Pending |
-| 59 | `backend/src/validations/chatValidation.js` | `backend/src/modules/conversations/http/conversationSchemas.js` (bridge: `backend/src/validations/chatValidation.js`) | Zod schemas for thread creation, messages, pagination, retry, and edit. | Implemented (Phase 4, Task 4.2) |
+| 59 | `backend/src/validations/chatValidation.js` | `backend/src/modules/conversations/http/conversationSchemas.js` (bridge: `backend/src/validations/chatValidation.js`) | Zod schemas for thread creation, messages, pagination, retry, and edit. | Implemented (Phase 4, Task 4.2 & 4.3) |
 | 60 | `backend/src/validations/reportValidation.js` | `backend/src/modules/operations/reports/http/reportSchemas.js` | Zod validation schemas for inspection reports. | Pending |
 | 61 | `backend/src/validations/userValidation.js` | `backend/src/modules/identity/http/profileSchemas.js` | Zod schemas for user profile updates and provider credentials. | Pending |
 

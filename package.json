@@ -33,6 +33,7 @@
     "test:asset-suite": "node --import ./tests/setup.js --test tests/api/asset-document-suite.test.js",
     "test:conversation-models": "node --import ./tests/setup.js --test tests/api/conversation-models.test.js",
     "test:threads": "node --import ./tests/setup.js --test tests/api/thread-management.test.js",
+    "test:turns": "node --import ./tests/setup.js --test tests/api/turn-lifecycle.test.js",
     "verify": "npm run lint && npm run build:web"
   },
   "devDependencies": {

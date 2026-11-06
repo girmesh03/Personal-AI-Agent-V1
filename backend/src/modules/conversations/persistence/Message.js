@@ -14,6 +14,7 @@ const messagePartSchema = new mongoose.Schema(
     partId: {
       type: String,
       required: [true, 'Message part identifier is required.'],
+      default: () => new mongoose.Types.ObjectId().toString(),
     },
     type: {
       type: String,

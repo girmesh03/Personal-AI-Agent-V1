@@ -415,3 +415,31 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
    - `npm run test:threads`: 11/11 tests passing in 82.1s.
    - `npm run test:api`: 156/156 tests passing across 14 test suites in 185s.
    - `npm run verify`: 0 lint errors, 1,513 modules transformed in 18.1s. Clean working tree.
+
+---
+
+## 24. Task 4.3: Turn Lifecycle Service & Turn Execution APIs
+
+### Key Implementation Findings & Defenses
+1. **Express 5 Accessor Safety on `req.query` and `req.params`:**
+   - Express 5 defines `req.query` as a getter-only property on `IncomingMessage.prototype`. Reassignment throws `TypeError: Cannot set property query of #<IncomingMessage> which has only a getter`.
+   - In `backend/src/infrastructure/http/middleware/validate.js`, sanitized/parsed values are assigned within a `try/catch` block falling back to `Object.defineProperty(req, prop, { value, writable: true, configurable: true, enumerable: true })`.
+2. **MongoDB Partial Indexing for Nullable Idempotency Keys:**
+   - MongoDB sparse indexes treat `{ idempotencyKey: null }` as an indexed value when Mongoose applies a default of `null`. This caused an `E11000 duplicate key error` on `{ threadId, idempotencyKey: null }` when multiple turns without an idempotency key were inserted.
+   - Resolution: Specified `partialFilterExpression: { idempotencyKey: { $type: 'string' } }` on `uniq_turn_thread_idempotency` and set default to `undefined`. Only real string keys are indexed for unique deduplication.
+3. **Turn Lifecycle State Machine Invariants (Section 10.2):**
+   - **Idempotency Replay:** If a turn with matching idempotency key already exists in thread, `turnService.createTurn` immediately returns the existing turn and populated user message without creating duplicate turns or runs.
+   - **Retry Generation:** Retrying a turn creates a new `AgentRun` attempt without duplicating the user's turn. Rejects concurrent retries with `409 Conflict` if the turn is locked under an active unexpired lease.
+   - **Branch-Isolated Edit:** Editing a turn forks a new `MessageBranch` from the user message's fork point, sets `thread.activeBranchId` to the new branch, and attaches the edited user message and new turn, preserving original branch lineage unmodified.
+   - **Continuation:** Continues partial/stopped assistant generation without re-submitting the user turn, provisioning a continuation `AgentRun` and acquiring lease lock.
+   - **Cancellation Protocol (Section 11.3):** Transitions active run to `cancelled` with reason, releases `turn.runLock`, and updates `turn.status = 'cancelled'`.
+4. **Strict Isolation (NFR-SEC-004) & 401 Unauthenticated:**
+   - All turn operations enforce thread and asset ownership against `req.user.id`.
+   - Probing foreign threads or referencing foreign assets returns uniform 404 `NOT_FOUND`.
+5. **Verification Evidence:**
+   - `npm run test:turns`: 14/14 tests passing in 73.3s.
+   - `npm run test:threads`: 11/11 tests passing in 66.0s.
+   - `npm run test:conversation-models`: 9/9 tests passing in 38.4s.
+   - `npm run lint`: 0 errors.
+   - `npm run build:web`: 1,513 modules transformed, 0 errors.
+

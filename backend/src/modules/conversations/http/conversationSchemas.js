@@ -132,3 +132,181 @@ export const branchParamSchema = z.object({
     branchId: objectIdSchema,
   }),
 });
+
+/**
+ * Schema for submitting a new turn (normal send)
+ */
+export const createTurnSchema = z.object({
+  params: z.object({
+    threadId: objectIdSchema.optional(),
+    id: objectIdSchema.optional(),
+  }).refine(data => data.threadId || data.id, {
+    message: 'Thread ID is required.',
+  }),
+  body: z.object({
+    content: z
+      .string()
+      .trim()
+      .max(CHAT_CONSTANTS.MAX_MESSAGE_LENGTH, `Message text cannot exceed ${CHAT_CONSTANTS.MAX_MESSAGE_LENGTH} characters.`)
+      .optional()
+      .nullable(),
+    parts: z.array(z.any()).optional(),
+    attachments: z
+      .array(
+        z.union([
+          objectIdSchema,
+          z.object({
+            assetId: objectIdSchema,
+            originalName: z.string().optional(),
+            mimeType: z.string().optional(),
+            sizeBytes: z.number().optional(),
+            storageKey: z.string().optional(),
+            kind: z.string().optional(),
+          }),
+        ])
+      )
+      .optional(),
+    idempotencyKey: z.string().trim().max(256).optional().nullable(),
+    branchId: objectIdSchema.optional().nullable(),
+    modelSelection: z
+      .object({
+        provider: z.string().trim().min(1),
+        modelId: z.string().trim().min(1),
+      })
+      .optional(),
+    metadata: z.record(z.string(), z.any()).optional(),
+  }),
+});
+
+/**
+ * Schema for turn ID parameter
+ */
+export const turnIdParamSchema = z.object({
+  params: z.object({
+    threadId: objectIdSchema.optional(),
+    id: objectIdSchema.optional(),
+    turnId: objectIdSchema,
+  }).refine(data => data.threadId || data.id, {
+    message: 'Thread ID is required.',
+  }),
+});
+
+/**
+ * Schema for retrying a turn
+ */
+export const retryTurnSchema = z.object({
+  params: z.object({
+    threadId: objectIdSchema.optional(),
+    id: objectIdSchema.optional(),
+    turnId: objectIdSchema,
+  }).refine(data => data.threadId || data.id, {
+    message: 'Thread ID is required.',
+  }),
+  body: z.object({
+    modelSelection: z
+      .object({
+        provider: z.string().trim().min(1),
+        modelId: z.string().trim().min(1),
+      })
+      .optional(),
+  }).optional(),
+});
+
+/**
+ * Schema for editing a previous turn
+ */
+export const editTurnSchema = z.object({
+  params: z.object({
+    threadId: objectIdSchema.optional(),
+    id: objectIdSchema.optional(),
+    turnId: objectIdSchema,
+  }).refine(data => data.threadId || data.id, {
+    message: 'Thread ID is required.',
+  }),
+  body: z.object({
+    content: z
+      .string()
+      .trim()
+      .max(CHAT_CONSTANTS.MAX_MESSAGE_LENGTH, `Message text cannot exceed ${CHAT_CONSTANTS.MAX_MESSAGE_LENGTH} characters.`)
+      .optional()
+      .nullable(),
+    parts: z.array(z.any()).optional(),
+    attachments: z
+      .array(
+        z.union([
+          objectIdSchema,
+          z.object({
+            assetId: objectIdSchema,
+            originalName: z.string().optional(),
+            mimeType: z.string().optional(),
+            sizeBytes: z.number().optional(),
+            storageKey: z.string().optional(),
+            kind: z.string().optional(),
+          }),
+        ])
+      )
+      .optional(),
+    forkBranch: z.boolean().default(true).optional(),
+    branchName: z.string().trim().max(50).optional(),
+    modelSelection: z
+      .object({
+        provider: z.string().trim().min(1),
+        modelId: z.string().trim().min(1),
+      })
+      .optional(),
+  }),
+});
+
+/**
+ * Schema for continuing an assistant response
+ */
+export const continueTurnSchema = z.object({
+  params: z.object({
+    threadId: objectIdSchema.optional(),
+    id: objectIdSchema.optional(),
+    turnId: objectIdSchema,
+  }).refine(data => data.threadId || data.id, {
+    message: 'Thread ID is required.',
+  }),
+  body: z.object({
+    modelSelection: z
+      .object({
+        provider: z.string().trim().min(1),
+        modelId: z.string().trim().min(1),
+      })
+      .optional(),
+  }).optional(),
+});
+
+/**
+ * Schema for cancelling an active turn or run
+ */
+export const cancelTurnSchema = z.object({
+  params: z.object({
+    threadId: objectIdSchema.optional(),
+    id: objectIdSchema.optional(),
+    turnId: objectIdSchema,
+  }).refine(data => data.threadId || data.id, {
+    message: 'Thread ID is required.',
+  }),
+  body: z.object({
+    reason: z.string().trim().max(500).optional(),
+  }).optional(),
+});
+
+/**
+ * Schema for listing turns in a thread
+ */
+export const listTurnsSchema = z.object({
+  params: z.object({
+    threadId: objectIdSchema.optional(),
+    id: objectIdSchema.optional(),
+  }).refine(data => data.threadId || data.id, {
+    message: 'Thread ID is required.',
+  }),
+  query: z.object({
+    branchId: objectIdSchema.optional(),
+    limit: z.coerce.number().int().min(1).max(CONVERSATION_CONSTANTS.MAX_PAGE_SIZE).default(50).optional(),
+  }),
+});
+

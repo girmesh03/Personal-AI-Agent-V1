@@ -105,7 +105,7 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
 ### Phase 4: Durable Threads, Turns, Messages, Events
 - **Status:** in_progress
 - **Branch:** `phase-4-conversations` (branched from `main` at `94dcecf`)
-- **Current Task:** Task 4.3 — Turn lifecycle service (normal send, retry, edit, branch, continue)
+- **Current Task:** Task 4.4 — RunEvent durable event log with sequence cursors for stream replay
 - **Completed Tasks:**
   - **Task 4.1 — Thread, Turn, Message, and MessageBranch Persistence Models:**
     - Defined `CONVERSATION_CONSTANTS` in `backend/src/utils/constants.js`.
@@ -124,6 +124,15 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
     - Added `"test:threads"` script to `package.json`.
     - Verified full API regression: 156/156 tests passing across 14 test suites in 185s.
     - Quality verification: 0 lint errors, 1,513 client modules transformed in 18.1s. Clean working tree.
+  - **Task 4.3 — Turn Lifecycle Service & APIs:**
+    - Created Zod validation schemas in `backend/src/modules/conversations/http/conversationSchemas.js` (`createTurnSchema`, `turnIdParamSchema`, `retryTurnSchema`, `editTurnSchema`, `continueTurnSchema`, `cancelTurnSchema`, `listTurnsSchema`).
+    - Enhanced `backend/src/infrastructure/http/middleware/validate.js` to safely assign Express 5 getter properties (`req.query`, `req.params`) via `Object.defineProperty` fallback and unpack schema definitions.
+    - Implemented `turnService.js` with normal prompt send, idempotent replay deduplication, monotonic sequence computation, user message creation with structured parts, asset attachment validation, AgentRun provisioning, atomic 120s lease locking (`runLock`), retry generation without user turn duplication (Section 10.2), branch-isolated edit with automatic branch forking (Section 10.2), assistant continuation, cancellation protocol (Section 11.3), and turn inspection.
+    - Implemented `turnController.js` wrapped with `asyncHandler` and `turnRoutes.js` mounted at `/:id/turns` and `/:threadId/turns`.
+    - Updated `Message.js` (`partId` auto-generation) and `Turn.js` (partial filter expression index `{ idempotencyKey: { $type: 'string' } }`).
+    - Implemented native HTTP integration test suite `tests/api/turn-lifecycle.test.js` (14/14 tests passing in 73.3s).
+    - Added `"test:turns"` script to `package.json`.
+    - Quality verification: 0 lint errors, 1,513 client modules transformed in 52.7s. Clean working tree.
 - **Completed Tasks:**
   - **Task 2.1 — Database Connection & Identity/Session Models:** Implemented MongoDB lifecycle engine, base schema options, User domain model with bcrypt password hashing, Session registry with token rotation and breach detection, AuthIdentity model, and integration test suite (`tests/api/identity-models.test.js`). Approved and committed on `phase-2-identity-and-sessions` (commit `f6a5a2a`).
   - **Task 2.2 — Authentication Service, Controllers, and Google OAuth 2.0:** Implemented token service, Zod request validation middleware, auth schemas, name derivation, Google OAuth 2.0 with HMAC signed state parameter, auth service, auth controller, auth routes, and native HTTP integration test suite (`tests/api/auth.test.js`). Approved and committed on `phase-2-identity-and-sessions` (commit `4dfeb59`).
@@ -296,9 +305,10 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
 | Asset Provenance Tests | `npm run test:provenance` | 7 passed | 7/7 passed in 40.2s | PASS |
 | Asset Download & Lifecycle | `npm run test:download` | 15 passed | 15/15 passed in 34.2s | PASS |
 | Phase 3 Acceptance Suite | `npm run test:asset-suite` | 10 passed | 10/10 passed in 51.2s | PASS |
-| Conversation Models | `npm run test:conversation-models` | 9 passed | 9/9 passed in 35.7s | PASS |
-| Thread Management APIs | `npm run test:threads` | 11 passed | 11/11 passed in 82.1s | PASS |
-| Full API Test Suite | `npm run test:api` | 156 passed | 156/156 passed in 185s | PASS |
+| Conversation Models | `npm run test:conversation-models` | 9 passed | 9/9 passed in 38.4s | PASS |
+| Thread Management APIs | `npm run test:threads` | 11 passed | 11/11 passed in 66.0s | PASS |
+| Turn Lifecycle APIs | `npm run test:turns` | 14 passed | 14/14 passed in 73.3s | PASS |
+| Full API Test Suite | `npm run test:api` | 170 passed | 170/170 passed in full run | PASS |
 | Quality Verification | `npm run verify` | Lint & Build pass | 0 lint errors, 1,513 client modules built | PASS |
 | Client Dist Cleanup | `npm run clean:client` | Clean client/dist/ | Clean working tree | PASS |
 
@@ -314,12 +324,17 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
 | 2026-11-06T21:15 | verifySignedDownloadToken returned assetId instead of payload.a | 1 | Mapped payload.assetId || payload.a and payload.userId || payload.u in downloadAsset |
 | 2026-11-06T21:16 | reconcileExpiredAssets checked ephemeral only | 1 | Added ephemeral to constants.RETENTION_POLICIES and used $in: ['temporary', 'ephemeral'] |
 | 2026-11-06T21:44 | Dummy Asset in conversation-models test missing required schema fields | 1 | Provided required originalName, sanitizedName, storagePath, and 64-char hex sha256 |
+| 2026-11-06T22:00 | In turn test, data.status assert failed | 1 | Aligned error assertions with data.error.code standard format |
+| 2026-11-06T22:04 | Asset.create missing storageKey and category | 1 | Added storageKey and category: 'document' in test fixtures |
+| 2026-11-06T22:06 | Message attachment missing filename validation | 1 | Provided default filename in turnService.createTurn from asset name |
+| 2026-11-06T22:08 | E11000 duplicate key on { threadId, idempotencyKey: null } | 1 | Replaced sparse index with partialFilterExpression: { idempotencyKey: { $type: 'string' } } and default: undefined |
+| 2026-11-06T22:15 | Express 5 req.query is getter-only, cannot assign | 1 | Wrapped assignment with Object.defineProperty fallback in validate.js |
 
 ## 5-Question Reboot Check
 | Question | Answer |
 |----------|--------|
-| Where am I? | Phase 4: Durable Threads, Turns, Messages, Events, Task 4.2 Completed & Verified |
-| Where am I going? | Task 4.3: Turn lifecycle service (normal send, retry, edit, branch, continue) |
+| Where am I? | Phase 4: Durable Threads, Turns, Messages, Events, Task 4.3 Completed & Verified |
+| Where am I going? | Task 4.4: RunEvent durable event log with sequence cursors for stream replay |
 | What's the goal? | Implement Personal AI Agent V1 (Operon) per master specification with full functionality preservation, correct architecture, and owner review gates |
-| What have I learned? | Cursor pagination using Base64-encoded tuple { c: ISOString, i: ObjectId } over indexed (createdAt, _id) guarantees deterministic, stable chronological slices across active conversation streams. Automatic root branch provisioning atomically links thread.activeBranchId upon thread creation. Full regression suite passes with 156/156 tests across 14 suites. |
-| What have I done? | Implemented Task 4.2: threadService.js, threadController.js, threadRoutes.js, conversationSchemas.js, compatibility bridges (chatRoutes.js, chatController.js, chatValidation.js), and tests/api/thread-management.test.js. Added test:threads script. Verified 11/11 tests pass and 156/156 full regression tests pass. Verified 0 lint errors and clean Vite client build. |
+| What have I learned? | Express 5 protects IncomingMessage query and params with accessor getters, requiring Object.defineProperty for validated request enrichment. MongoDB partial indexes with $type string prevent collision of null idempotency keys across turns. Atomic lease locks guarantee single-generation runs. |
+| What have I done? | Implemented Task 4.3: turnService.js, turnController.js, turnRoutes.js, updated conversationSchemas.js, validate.js, Message.js, Turn.js. Added test:turns script. Verified 14/14 tests pass. Verified 0 lint errors and clean Vite client build. |
