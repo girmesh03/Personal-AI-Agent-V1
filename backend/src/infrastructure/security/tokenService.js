@@ -4,6 +4,7 @@
  * Enforces uniform 7-day refresh token lifespan and strict 401 UNAUTHENTICATED error handling.
  */
 
+import crypto from 'node:crypto';
 import jwt from 'jsonwebtoken';
 import { env } from '../../config/env.js';
 import { JWT_EXPIRY, COOKIE_MAX_AGE } from '../../utils/constants.js';
@@ -16,22 +17,30 @@ import { UnauthenticatedError } from '../../shared/errors/AppError.js';
  * @returns {string} Signed JWT access token.
  */
 export const generateAccessToken = (userId) => {
-  return jwt.sign({ id: String(userId) }, env.JWT_ACCESS_SECRET, {
-    expiresIn: env.JWT_ACCESS_EXPIRES_IN || JWT_EXPIRY.ACCESS,
-  });
+  return jwt.sign(
+    { id: String(userId), jti: crypto.randomUUID() },
+    env.JWT_ACCESS_SECRET,
+    {
+      expiresIn: env.JWT_ACCESS_EXPIRES_IN || JWT_EXPIRY.ACCESS,
+    }
+  );
 };
 
 /**
  * Generates a signed long-lived JWT refresh token with uniform 7-day lifespan.
- * Strictly zero remember-me variation.
+ * Strictly zero remember-me variation. Includes RFC 7519 jti UUID to prevent collisions.
  * @function generateRefreshToken
  * @param {string|import('mongoose').Types.ObjectId} userId - Unique identifier of the authenticated user.
  * @returns {string} Signed JWT refresh token.
  */
 export const generateRefreshToken = (userId) => {
-  return jwt.sign({ id: String(userId) }, env.JWT_REFRESH_SECRET, {
-    expiresIn: env.JWT_REFRESH_EXPIRES_IN || JWT_EXPIRY.REFRESH,
-  });
+  return jwt.sign(
+    { id: String(userId), jti: crypto.randomUUID() },
+    env.JWT_REFRESH_SECRET,
+    {
+      expiresIn: env.JWT_REFRESH_EXPIRES_IN || JWT_EXPIRY.REFRESH,
+    }
+  );
 };
 
 /**

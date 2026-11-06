@@ -7,6 +7,8 @@ import mongoose from 'mongoose';
 import { User } from '../domain/User.js';
 import { HTTP_STATUS } from '../../../utils/constants.js';
 import { UnauthenticatedError, ConflictError } from '../../../shared/errors/AppError.js';
+import { clearAuthCookies } from '../../../infrastructure/security/tokenService.js';
+import { exportAccountData, deleteAccount } from '../services/accountService.js';
 
 /**
  * Retrieves authenticated user profile.
@@ -145,9 +147,45 @@ export const getApiKeyStatus = async (req, res) => {
   });
 };
 
+/**
+ * Exports user profile and account configuration data without secrets (FR-CORE-SEC-003).
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ */
+export const exportData = async (req, res) => {
+  const exportPayload = await exportAccountData(req.userId);
+
+  res.status(HTTP_STATUS.OK).json({
+    success: true,
+    message: 'Account data exported successfully.',
+    data: exportPayload,
+  });
+};
+
+/**
+ * Permanently deletes the authenticated user account and revokes active sessions (FR-CORE-SEC-003).
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ */
+export const deleteUserAccount = async (req, res) => {
+  const result = await deleteAccount(req.userId);
+
+  clearAuthCookies(res);
+
+  res.status(HTTP_STATUS.OK).json({
+    success: true,
+    message: 'User account and active sessions permanently deleted.',
+    data: result,
+  });
+};
+
 export default {
   getProfile,
   updateProfile,
   updateUserApiKeys,
   getApiKeyStatus,
+  exportData,
+  deleteUserAccount,
 };

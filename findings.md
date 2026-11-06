@@ -177,3 +177,21 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
   - `PATCH /api/v1/users/api-keys`: updates BYOK keys using envelope encryption; raw DB record stores only ciphertext.
   - `GET /api/v1/users/api-keys`: returns masked key status without exposing plaintext secrets.
   - Compatibility bridges established for `backend/src/controllers/userController.js` and `backend/src/routes/userRoutes.js`.
+
+## 14. Phase 2 Identity, Session & Account Security Acceptance Suite (Task 2.5)
+- **Data Isolation & Anti-IDOR Architecture (`infrastructure/security/userIsolation.js`):**
+  - Implemented `assertUserOwnership(resource, userId, ownerField)`: guarantees that unauthorized attempts to access or mutate foreign resources throw the exact same `NotFoundError` (404 `NOT_FOUND`) as missing resources, preventing IDOR enumeration per `NFR-SEC-004`.
+  - Implemented `buildOwnerQuery(userId, query, ownerField)`: forces all database lookup and mutation queries to include the authenticated owner boundary.
+- **Account Data Export & Permanent Deletion Lifecycle (`modules/identity/services/accountService.js`):**
+  - Implemented `exportAccountData(userId)`: extracts user profile, settings, and nonsecret metadata while strictly omitting passwords, raw API keys, and session tokens (`FR-CORE-SEC-003`).
+  - Implemented `deleteAccount(userId)`: purges User document, all associated Sessions, and linked AuthIdentities, followed by cookie clearing. Subsequent login attempts are immediately rejected.
+- **JWT Collision Mitigation (`infrastructure/security/tokenService.js`):**
+  - Added RFC 7519 `jti` (random UUID) to both access and refresh JWT payloads.
+  - Prevents hash collisions in MongoDB's unique index on `refreshTokenHash` when rapid or concurrent tokens are generated within the same second for the same user.
+- **Accepted Acceptance Scenarios Verified in `tests/api/identity-suite.test.js`:**
+  - Full registration, password hashing, HttpOnly cookie issuance, and session reload without localStorage identity authority.
+  - Concurrent token rotation and immediate replay breach detection terminating the entire session family (`TOKEN_REUSE_DETECTED`).
+  - OAuth state tampering and missing state parameter rejection.
+  - Cross-user IDOR rejection ensuring server-derived identity strictly governs data access.
+  - Zero plaintext secrets across all responses.
+  - Clean account data export and complete database account deletion.

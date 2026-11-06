@@ -45,21 +45,22 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
   - **Phase 1 Gate & Owner Merge Review:** Approved by owner; merged to `main`.
 
 ### Phase 2: Identity, Sessions, and Account Security
-- **Status:** in_progress
+- **Status:** gate_ready
 - **Branch:** `phase-2-identity-and-sessions` (branched from `main` at `6c4b80d`)
-- **Current Task:** Task 2.5 — Comprehensive Identity & Session API Test Suite
+- **Current Task:** Phase 2 Gate & Owner Merge Review
 - **Completed Tasks:**
   - **Task 2.1 — Database Connection Lifecycle & Domain Models:** Committed (`f6a5a2a`).
   - **Task 2.2 — Auth Service, Controllers, and Google OAuth 2.0:** Committed (`4dfeb59`).
   - **Task 2.3 — Session Middleware, CSRF Protection, and Rate Limiting:** Committed (`f3debef`).
-  - **Task 2.4 — Credential Envelope Encryption Service for BYOK Provider Credentials:** Completed & Verified.
-    - Implemented `modules/identity/services/credentialEncryption.js` (AES-256-GCM, 96-bit unique nonces, HKDF KEK derivation with key versioning `v1`, ephemeral DEK zeroed out after use, user/credential bound AAD, rotation support, serialization/deserialization, and `redactCredential`).
-    - Added compatibility bridge `services/credentialEncryption.js`.
-    - Added `setEncryptedApiKey`, `getDecryptedApiKey`, and `getRedactedApiKey` methods to `User` model (`modules/identity/domain/User.js`).
-    - Implemented `modules/identity/http/profileSchemas.js`, `modules/identity/http/profileController.js`, and `modules/identity/http/profileRoutes.js` (with bridges `controllers/userController.js` and `routes/userRoutes.js`).
-    - Mounted `/api/v1/users` and `/api/v1/user` in `infrastructure/http/routes.js`.
-    - Verified with 11 new integration tests in `tests/api/credential-encryption.test.js` (all 45/45 tests passing in suite).
-    - Verified `npm run verify` passed (0 lint errors, client bundle built cleanly in 2.19s).
+  - **Task 2.4 — Credential Envelope Encryption Service for BYOK Provider Credentials:** Committed (`2aef358`).
+  - **Task 2.5 — Comprehensive Identity & Session API Test Suite:** Completed & Verified.
+    - Implemented `infrastructure/security/userIsolation.js` (`assertUserOwnership`, `buildOwnerQuery` per NFR-SEC-004).
+    - Implemented `modules/identity/services/accountService.js` (`exportAccountData`, `deleteAccount` per FR-CORE-SEC-003).
+    - Added collision-free `jti` (UUID) to JWT access and refresh tokens to prevent `refreshTokenHash` collisions during high-concurrency requests in the same second.
+    - Built comprehensive acceptance test suite in `tests/api/identity-suite.test.js` (12/12 passing).
+    - Ran full regression test suite across all 6 API test files: 57/57 tests passing in 59.6s.
+    - Ran `npm run verify` passing 100% (0 lint errors, client built in 6.19s).
+    - Cleaned client dist via `npm run clean:client`.
 - **Completed Tasks:**
   - **Task 2.1 — Database Connection & Identity/Session Models:** Implemented MongoDB lifecycle engine, base schema options, User domain model with bcrypt password hashing, Session registry with token rotation and breach detection, AuthIdentity model, and integration test suite (`tests/api/identity-models.test.js`). Approved and committed on `phase-2-identity-and-sessions` (commit `f6a5a2a`).
   - **Task 2.2 — Authentication Service, Controllers, and Google OAuth 2.0:** Implemented token service, Zod request validation middleware, auth schemas, name derivation, Google OAuth 2.0 with HMAC signed state parameter, auth service, auth controller, auth routes, and native HTTP integration test suite (`tests/api/auth.test.js`). Approved and committed on `phase-2-identity-and-sessions` (commit `4dfeb59`).

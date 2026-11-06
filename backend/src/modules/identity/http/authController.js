@@ -204,10 +204,34 @@ export const initiateGoogleSso = async (req, res) => {
 export const handleGoogleSsoCallback = async (req, res) => {
   const { code, state, error } = req.query;
   const clientUrl = env.CLIENT_ORIGIN || 'http://localhost:3000';
+  const wantsJson = req.query.json === 'true' || req.headers.accept?.includes('application/json');
 
   if (error || !code) {
     logger.warn(`[authController] Google SSO aborted or error received: ${error}`);
+    if (wantsJson) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
+        success: false,
+        error: {
+          code: error ? 'GOOGLE_AUTH_ERROR' : 'MISSING_CODE',
+          message: String(error || 'Authorization code is missing.'),
+        },
+      });
+    }
     return res.redirect(`${clientUrl}/login?error=${encodeURIComponent(String(error || 'GOOGLE_AUTH_CANCELLED'))}`);
+  }
+
+  if (!state) {
+    logger.warn('[authController] Google SSO missing state parameter.');
+    if (wantsJson) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
+        success: false,
+        error: {
+          code: 'MISSING_STATE',
+          message: 'OAuth state parameter is required.',
+        },
+      });
+    }
+    return res.redirect(`${clientUrl}/login?error=MISSING_STATE`);
   }
 
   try {
@@ -231,7 +255,7 @@ export const handleGoogleSsoCallback = async (req, res) => {
 
     setAuthCookies(res, result.accessToken, result.refreshToken);
 
-    if (req.query.json === 'true' || req.headers.accept?.includes('application/json')) {
+    if (wantsJson) {
       return res.status(HTTP_STATUS.OK).json({
         success: true,
         message: 'Google SSO authentication successful.',
@@ -245,6 +269,15 @@ export const handleGoogleSsoCallback = async (req, res) => {
   } catch (err) {
     const message = err instanceof Error ? err.message : 'GOOGLE_SSO_FAILED';
     logger.error(`[authController] Google SSO callback error: ${message}`);
+    if (wantsJson) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
+        success: false,
+        error: {
+          code: 'INVALID_STATE',
+          message,
+        },
+      });
+    }
     res.redirect(`${clientUrl}/login?error=${encodeURIComponent(message)}`);
   }
 };

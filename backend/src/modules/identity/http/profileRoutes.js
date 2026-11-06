@@ -9,6 +9,8 @@ import {
   updateProfile,
   updateUserApiKeys,
   getApiKeyStatus,
+  exportData,
+  deleteUserAccount,
 } from './profileController.js';
 import {
   updateProfileSchema,
@@ -45,5 +47,17 @@ router.patch('/api-keys', validate({ body: updateApiKeysSchema }), updateUserApi
  * @desc Retrieve masked status of BYOK provider credentials.
  */
 router.get('/api-keys', getApiKeyStatus);
+
+/**
+ * @route GET /api/v1/users/export
+ * @desc Export account metadata and profile without secrets (FR-CORE-SEC-003).
+ */
+router.get('/export', exportData);
+
+/**
+ * @route DELETE /api/v1/users/account
+ * @desc Permanently delete account and revoke all sessions (FR-CORE-SEC-003).
+ */
+router.delete('/account', deleteUserAccount);
 
 export default router;
