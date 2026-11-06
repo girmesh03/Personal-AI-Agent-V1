@@ -61,11 +61,11 @@ describe('Phase 2 Identity, Session & Account Security Acceptance Suite (Task 2.
   after(async () => {
     if (userAId) {
       await User.findByIdAndDelete(userAId);
-      await Session.deleteMany({ user: userAId });
+      await Session.deleteMany({ userId: userAId });
     }
     if (userBId) {
       await User.findByIdAndDelete(userBId);
-      await Session.deleteMany({ user: userBId });
+      await Session.deleteMany({ userId: userBId });
     }
     if (server) {
       await new Promise((resolve) => server.close(resolve));
@@ -339,7 +339,7 @@ describe('Phase 2 Identity, Session & Account Security Acceptance Suite (Task 2.
       assert.equal(deletedUser, null);
 
       // Verify active sessions are deleted
-      const userSessions = await Session.find({ user: userAId });
+      const userSessions = await Session.find({ userId: userAId });
       assert.equal(userSessions.length, 0);
 
       // Attempt to login with deleted user credentials fails with 401

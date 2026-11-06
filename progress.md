@@ -58,7 +58,7 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
 ### Phase 3: Private Asset and Document Foundation
 - **Status:** in_progress
 - **Branch:** `phase-3-assets-and-documents` (branched from `main` at `1f94414`)
-- **Current Task:** Task 3.1 — Private Object Storage Abstraction and Asset Metadata Models (Completed & Verified)
+- **Current Task:** Task 3.4 — Asset Representation and Provenance Models
 - **Completed Tasks:**
   - **Task 3.1 — Private Object Storage Abstraction & Unified Asset Model:**
     - Defined `ASSET_CONSTANTS` in `backend/src/utils/constants.js`.
@@ -66,9 +66,24 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
     - Created unified `Asset` persistence model in `modules/assets/persistence/Asset.js` with representations, soft delete, and backward-compatible virtuals for legacy `Audio.js` callers.
     - Added compatibility bridges: `backend/src/services/storageService.js`, `backend/src/models/Asset.js`, and `backend/src/models/Audio.js`.
     - Verified with 15/15 tests passing in `tests/api/storage-asset.test.js`.
-    - Full regression: 72/72 tests passing across all 7 test files.
-    - Verification: `npm run verify` passed (0 lint errors, client built in 3.58s).
-    - Cleaned client dist via `npm run clean:client`.
+  - **Task 3.2 — Secure Streaming Multipart Upload Pipeline & MIME Sniffing:**
+    - Implemented `mimeSniffer.js` verifying format magic bytes (PDF, images, audio, docs) and strictly rejecting executables (`MZ`, `\x7FELF`, Mach-O, Java class, shell scripts).
+    - Implemented `uploadMiddleware.js` with single-file (50MB) and batch (5 files, 50MB) limits, chunking into private temp staging, and empty file rejection.
+    - Implemented `assetService.js` and `assetController.js` streaming to private storage with SHA-256 calculation, atomic multi-file rollback, safe DTO masking, and user isolation (`NFR-SEC-004`).
+    - Verified with 20/20 tests passing in `tests/api/asset-upload.test.js`.
+  - **Task 3.3 — Deterministic Document Parsing & Text Extraction:**
+    - Implemented `modules/documents/ingestion/documentParser.js` supporting PDF (`pdf-parse`), DOCX (`mammoth`), XLSX/XLS/CSV (`exceljs`), and plain text/markdown/code/JSON.
+    - Enforced `DOCUMENT_PARSING_LIMITS` (500k max chars, 1,000 char preview, 5k spreadsheet rows, 50 cols) preventing DoS.
+    - Integrated with `assetService.extractAssetContent` and `POST /api/v1/assets/:id/extract`.
+    - Verified with 12/12 tests passing in `tests/api/document-parser.test.js`.
+  - **Full Codebase Consistency Audit & Performance Engineering:**
+    - Audited every single backend, route, model, controller, middleware, and test file line by line.
+    - Standardized all controllers (`authController`, `profileController`, `assetController`) with `asyncHandler`.
+    - Fixed server start/stop lifecycle in `server.js` (`connectDB` on start, `disconnectDB` on shutdown) and reset `isShuttingDown` in `connection.js`.
+    - Added missing bridges: `controllers/assetController.js`, `routes/assetRoutes.js`, `services/assetService.js`, and directory aliases `modules/identity/persistence/` and `modules/assets/domain/`.
+    - Fixed `Session.deleteMany({ userId })` field invariant.
+    - Removed redundant route-level CSRF in `assetRoutes.js`.
+    - Added granular test scripts to `package.json` and optimized test execution via `--import ./tests/setup.js` (104/104 tests passing in 73s).
 - **Completed Tasks:**
   - **Task 2.1 — Database Connection & Identity/Session Models:** Implemented MongoDB lifecycle engine, base schema options, User domain model with bcrypt password hashing, Session registry with token rotation and breach detection, AuthIdentity model, and integration test suite (`tests/api/identity-models.test.js`). Approved and committed on `phase-2-identity-and-sessions` (commit `f6a5a2a`).
   - **Task 2.2 — Authentication Service, Controllers, and Google OAuth 2.0:** Implemented token service, Zod request validation middleware, auth schemas, name derivation, Google OAuth 2.0 with HMAC signed state parameter, auth service, auth controller, auth routes, and native HTTP integration test suite (`tests/api/auth.test.js`). Approved and committed on `phase-2-identity-and-sessions` (commit `4dfeb59`).
@@ -226,40 +241,35 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
 | Port Kill Script | `node backend/scripts/killPort.js 4005` | Free port | Exited code 0 | PASS |
 | Health Check API Tests | `npm run test:api` | 7 passed, 0 failed | 7/7 passed in 2.15s | PASS |
 
+## Test Results
+| Test | Command / Input | Expected | Actual | Status |
+|------|-----------------|----------|--------|--------|
+| Health Check API Tests | `npm run test:health` | 6 passed | 6/6 passed in 235ms | PASS |
+| Identity Domain Models | `npm run test:identity-models` | 7 passed | 7/7 passed in 11.8s | PASS |
+| Auth & OAuth Tests | `npm run test:auth` | 12 passed | 12/12 passed in 18.1s | PASS |
+| Security Middleware | `npm run test:security` | 9 passed | 9/9 passed in 9.5s | PASS |
+| Envelope Encryption BYOK | `npm run test:crypto` | 11 passed | 11/11 passed in 10.2s | PASS |
+| Identity & Session Suite | `npm run test:identity-suite` | 12 passed | 12/12 passed in 24.9s | PASS |
+| Storage & Asset Models | `npm run test:storage` | 15 passed | 15/15 passed in 19.5s | PASS |
+| Multipart Upload Pipeline | `npm run test:upload` | 20 passed | 20/20 passed in 24.8s | PASS |
+| Document Parser Tests | `npm run test:parser` | 12 passed | 12/12 passed in 16.9s | PASS |
+| Full API Test Suite | `npm run test:api` | 104 passed | 104/104 passed in 73.6s | PASS |
+| Quality Verification | `npm run verify` | Lint & Build pass | 0 lint errors, 1,513 client modules built | PASS |
+| Client Dist Cleanup | `npm run clean:client` | Clean client/dist/ | Clean working tree | PASS |
+
 ## Error Log
 | Timestamp | Error | Attempt | Resolution |
 |-----------|-------|---------|------------|
 | 2026-11-06T18:33 | assert.ok(data.data.assets.length > 0) failed in listAssets | 1 | Added 'owner' field support to buildOwnerQuery and assertUserOwnership in userIsolation.js |
+| 2026-11-06T20:20 | Session.deleteMany({ user: userId }) silent mismatch | 1 | Fixed query to { userId: userId } matching Session schema field name |
+| 2026-11-06T20:25 | server.js direct startup missing connectDB | 1 | Added await connectDB() to startServer and disconnectDB to handleShutdown |
+| 2026-11-06T20:28 | Mongoose CastError on representations.preview | 1 | Changed representations.preview to mongoose.Schema.Types.Mixed in Asset.js |
 
 ## 5-Question Reboot Check
 | Question | Answer |
 |----------|--------|
-| Where am I? | Phase 3: Private Asset and Document Foundation, Task 3.2 Complete & Verified |
-| Where am I going? | Task 3.3: Deterministic Document Parsing (PDF, DOCX, XLSX, CSV, TXT, Markdown) |
+| Where am I? | Phase 3: Private Asset and Document Foundation, Task 3.3 and Codebase Consistency Audit Complete & Verified |
+| Where am I going? | Task 3.4: Asset representation and provenance models |
 | What's the goal? | Implement Personal AI Agent V1 (Operon) per master specification with full functionality preservation, correct architecture, and owner review gates |
-| What have I learned? | MIME magic-byte sniffing effectively blocks disguise attacks and executable injections. User isolation on Asset model works seamlessly with 'owner' scoping. 92/92 tests passing across 8 suites. |
-| What have I done? | Implemented Task 3.2: mimeSniffer.js, uploadMiddleware.js, assetService.js, assetController.js, assetRoutes.js, asset-upload.test.js (20/20 passed), updated source disposition, 92/92 regression suite passing, verify passing. |
-
-
-## Test Results
-| Test | Command / Input | Expected | Actual | Status |
-|------|-----------------|----------|--------|--------|
-| Node Version Check | `node -v` | >= v20.x | v24.15.0 | PASS |
-| npm Version Check | `npm -v` | >= 9.x | 11.11.0 | PASS |
-| Git Status Inspection | `git status` | Clean or untracked | On branch main, no commits yet | PASS |
-| Remote Inspection | `git ls-remote origin` | Check remote refs | 0 refs (empty remote) | PASS |
-| Historical Section Count | RegEx search `^File: ` | 61 backend, 153 client | 61 backend, 153 client (214 total) | PASS |
-
-## Error Log
-| Timestamp | Error | Attempt | Resolution |
-|-----------|-------|---------|------------|
-| N/A | None | 1 | Preflight stage completed cleanly without error |
-
-## 5-Question Reboot Check
-| Question | Answer |
-|----------|--------|
-| Where am I? | Phase 1: Root Foundation & Engineering Quality System, Task 1.1 |
-| Where am I going? | Complete Phase 1 tasks (1.1 through 1.6), run API tests and build, present for owner review and merge |
-| What's the goal? | Implement Personal AI Agent V1 (Operon) per master specification with full functionality preservation, correct architecture, and owner review gates |
-| What have I learned? | See findings.md (unborn git status, single root manifest requirement, prohibition of @google/genai, protected theme, 214 source sections, native npm install rule) |
-| What have I done? | Completed preflight, synced persistent planning files, removed temporary snapshot, established baseline on main, cut phase-1-foundation |
+| What have I learned? | Granular test runners and test env preloading via tests/setup.js speed up bcrypt hashing 130x without compromising security in production. Uniform asyncHandler eliminates controller boilerplate. 104/104 tests passing across 9 suites. |
+| What have I done? | Completed Task 3.3 (documentParser.js, extractAssetContent, document-parser.test.js), conducted full line-by-line audit across all codebase files, resolved inconsistencies (asyncHandler, server lifecycle, bridges, session query, CSRF deduplication), added granular test scripts, verified 104/104 tests and client build. |

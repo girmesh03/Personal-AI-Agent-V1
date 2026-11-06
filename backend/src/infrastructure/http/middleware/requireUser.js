@@ -17,43 +17,47 @@ import { UnauthenticatedError } from '../../../shared/errors/AppError.js';
  * @param {import('express').NextFunction} next
  */
 export const requireUser = async (req, _res, next) => {
-  let token;
+  try {
+    let token;
 
-  // 1. Check HttpOnly cookies first
-  if (req.cookies?.accessToken) {
-    token = req.cookies.accessToken;
-  } else if (req.cookies?.token) {
-    token = req.cookies.token;
+    // 1. Check HttpOnly cookies first
+    if (req.cookies?.accessToken) {
+      token = req.cookies.accessToken;
+    } else if (req.cookies?.token) {
+      token = req.cookies.token;
+    }
+    // 2. Fallback to Authorization header Bearer token
+    else if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+      token = req.headers.authorization.split(' ')[1];
+    }
+
+    if (!token) {
+      throw new UnauthenticatedError('Please log in to continue.', 'UNAUTHENTICATED');
+    }
+
+    // verifyAccessToken throws UnauthenticatedError on expired or invalid token
+    const decoded = verifyAccessToken(token);
+
+    const user = await User.findById(decoded.id).select(
+      '-password +settings.apiKeys.geminiApiKey +settings.apiKeys.addisApiKey +integrations.telegram.botToken'
+    );
+
+    if (!user) {
+      throw new UnauthenticatedError('Account not found. Please log in again.', 'UNAUTHENTICATED');
+    }
+
+    // Attach server-derived trusted identity
+    req.user = user;
+    req.userId = String(user._id);
+    req.auth = Object.freeze({
+      userId: String(user._id),
+      email: user.email,
+    });
+
+    next();
+  } catch (err) {
+    next(err);
   }
-  // 2. Fallback to Authorization header Bearer token
-  else if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
-    token = req.headers.authorization.split(' ')[1];
-  }
-
-  if (!token) {
-    throw new UnauthenticatedError('Please log in to continue.', 'UNAUTHENTICATED');
-  }
-
-  // verifyAccessToken throws UnauthenticatedError on expired or invalid token
-  const decoded = verifyAccessToken(token);
-
-  const user = await User.findById(decoded.id).select(
-    '-password +settings.apiKeys.geminiApiKey +settings.apiKeys.addisApiKey +integrations.telegram.botToken'
-  );
-
-  if (!user) {
-    throw new UnauthenticatedError('Account not found. Please log in again.', 'UNAUTHENTICATED');
-  }
-
-  // Attach server-derived trusted identity
-  req.user = user;
-  req.userId = String(user._id);
-  req.auth = Object.freeze({
-    userId: String(user._id),
-    email: user.email,
-  });
-
-  next();
 };
 
 /**

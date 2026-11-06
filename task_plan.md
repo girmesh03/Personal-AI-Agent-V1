@@ -6,7 +6,7 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
 Deliver a fully verified, production-grade Personal AI Agent V1 with provider-neutral LangChain/LangGraph architecture, single root package manifest, protected MUI theme, durable multimodal chat lifecycle, Postman-style backend API integration test suite, and complete functionality preservation across all 214 historical V0 source sections.
 
 ## Next Step
-Implement Task 3.2: Secure streaming multipart upload pipeline with MIME magic-byte sniffing, size bounds, and asset ingestion routes (`/api/v1/assets/upload`).
+Implement Task 3.4: Asset representation and provenance models.
 
 ## Current Phase
 Phase 3: Private Asset and Document Foundation - in_progress
@@ -50,7 +50,7 @@ Phase 3: Private Asset and Document Foundation - in_progress
 ### Phase 3: Private Asset and Document Foundation
 - [x] Task 3.1: Private object storage abstraction and asset metadata models (Committed - bb9375c)
 - [x] Task 3.2: Secure streaming multipart upload pipeline with MIME sniffing and size bounds (Completed & Verified - 20/20 passing)
-- [ ] Task 3.3: Deterministic document parsing (PDF, DOCX, XLSX, CSV, TXT, Markdown)
+- [x] Task 3.3: Deterministic document parsing (PDF, DOCX, XLSX, CSV, TXT, Markdown) (Completed & Verified - 12/12 passing)
 - [ ] Task 3.4: Asset representation and provenance models
 - [ ] Task 3.5: Private signed download and asset lifecycle reconciliation
 - [ ] Task 3.6: Asset and document API tests

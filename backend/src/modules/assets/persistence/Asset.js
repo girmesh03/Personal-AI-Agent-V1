@@ -123,12 +123,13 @@ const assetSchema = new mongoose.Schema(
         },
         error: { type: String, default: null },
       },
+      textSnippet: {
+        type: String,
+        default: null,
+      },
       preview: {
-        url: { type: String, default: null },
-        storageKey: { type: String, default: null },
-        mimeType: { type: String, default: null },
-        width: { type: Number, default: null },
-        height: { type: Number, default: null },
+        type: mongoose.Schema.Types.Mixed,
+        default: null,
       },
       metadata: {
         type: mongoose.Schema.Types.Mixed,

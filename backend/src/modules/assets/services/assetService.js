@@ -7,6 +7,7 @@ import fs from 'node:fs';
 import { Asset } from '../persistence/Asset.js';
 import * as storageService from '../storage/storageService.js';
 import { assertUserOwnership, buildOwnerQuery } from '../../../infrastructure/security/userIsolation.js';
+import { parseDocument } from '../../documents/ingestion/documentParser.js';
 import { BadRequestError, NotFoundError } from '../../../shared/errors/AppError.js';
 import { ASSET_CONSTANTS } from '../../../utils/constants.js';
 import { logger } from '../../../config/logger.js';
@@ -202,5 +203,51 @@ export const deleteAsset = async (assetId, userId) => {
   const asset = await getAssetById(assetId, userId);
   await asset.softDelete();
   logger.info(`[assetService] Asset soft-deleted: id=${asset._id}, owner=${userId}`);
+  return asset;
+};
+
+/**
+ * Extracts and persists deterministic text representations for a document asset.
+ *
+ * @param {string} assetId
+ * @param {string | import('mongoose').Types.ObjectId} userId
+ * @param {object} [options={}]
+ * @returns {Promise<import('mongoose').HydratedDocument<any>>}
+ */
+export const extractAssetContent = async (assetId, userId, options = {}) => {
+  const asset = await getAssetById(assetId, userId);
+
+  // If already extracted and force is not specified, return existing representation
+  if (asset.representations?.extractedText && !options.force) {
+    return asset;
+  }
+
+  const filePath = storageService.resolveSafeStoragePath(asset.storageKey);
+  const parsed = await parseDocument({
+    filePath,
+    mimeType: asset.mimeType,
+    filename: asset.originalName,
+    options,
+  });
+
+  asset.representations = {
+    ...asset.representations,
+    extractedText: parsed.text,
+    textSnippet: parsed.preview,
+    preview: parsed.preview,
+    textExtractionStatus: parsed.isScanned ? 'none' : 'extracted',
+    metadata: {
+      pageCount: parsed.pageCount,
+      sheetCount: parsed.sheetCount,
+      format: parsed.format,
+      charCount: parsed.charCount,
+      isTruncated: parsed.isTruncated,
+      isScanned: parsed.isScanned,
+      extractedAt: new Date(),
+    },
+  };
+
+  await asset.save();
+  logger.info(`[assetService] Document text extracted: assetId=${asset._id}, format=${parsed.format}, chars=${parsed.charCount}`);
   return asset;
 };

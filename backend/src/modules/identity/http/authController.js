@@ -33,6 +33,7 @@ import {
 import { deriveNamesFromEmail } from '../utils/nameDerivation.js';
 import { env } from '../../../config/env.js';
 import logger from '../../../config/logger.js';
+import { asyncHandler } from '../../../infrastructure/http/middleware/asyncHandler.js';
 
 export { deriveNamesFromEmail };
 
@@ -42,7 +43,7 @@ export { deriveNamesFromEmail };
  * @param {import('express').Request} req
  * @param {import('express').Response} res
  */
-export const register = async (req, res) => {
+export const register = asyncHandler(async (req, res) => {
   const payload = req.validated?.body || req.body;
   const result = await registerUser(payload);
 
@@ -53,7 +54,7 @@ export const register = async (req, res) => {
       user: result.user,
     },
   });
-};
+});
 
 /**
  * Authenticates user credentials and issues session tokens.
@@ -61,7 +62,7 @@ export const register = async (req, res) => {
  * @param {import('express').Request} req
  * @param {import('express').Response} res
  */
-export const login = async (req, res) => {
+export const login = asyncHandler(async (req, res) => {
   const { email, password } = req.validated?.body || req.body;
   const userAgent = req.headers['user-agent'] || 'unknown';
   const ipAddress = req.ip || req.socket?.remoteAddress || 'unknown';
@@ -88,7 +89,7 @@ export const login = async (req, res) => {
       user: result.user,
     },
   });
-};
+});
 
 /**
  * Refreshes access token using long-lived refresh token.
@@ -96,7 +97,7 @@ export const login = async (req, res) => {
  * @param {import('express').Request} req
  * @param {import('express').Response} res
  */
-export const refreshToken = async (req, res) => {
+export const refreshToken = asyncHandler(async (req, res) => {
   const rawRefreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
   const userAgent = req.headers['user-agent'] || 'unknown';
   const ipAddress = req.ip || req.socket?.remoteAddress || 'unknown';
@@ -116,7 +117,7 @@ export const refreshToken = async (req, res) => {
       user: result.user,
     },
   });
-};
+});
 
 /**
  * Invalidate session and clear authentication cookies.
@@ -124,7 +125,7 @@ export const refreshToken = async (req, res) => {
  * @param {import('express').Request} req
  * @param {import('express').Response} res
  */
-export const logout = async (req, res) => {
+export const logout = asyncHandler(async (req, res) => {
   const rawRefreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
 
   await logoutUser({ rawRefreshToken });
@@ -135,7 +136,7 @@ export const logout = async (req, res) => {
     message: 'Logged out successfully',
     data: null,
   });
-};
+});
 
 /**
  * Retrieves the profile of the currently authenticated user.
@@ -143,7 +144,7 @@ export const logout = async (req, res) => {
  * @param {import('express').Request} req
  * @param {import('express').Response} res
  */
-export const getMe = async (req, res) => {
+export const getMe = asyncHandler(async (req, res) => {
   const userId = req.user?._id || req.user?.id;
   if (!userId) {
     throw new UnauthenticatedError('User authentication is required.', 'UNAUTHENTICATED');
@@ -157,7 +158,7 @@ export const getMe = async (req, res) => {
       user,
     },
   });
-};
+});
 
 /**
  * Initiates Google SSO login/registration flow.
@@ -165,7 +166,7 @@ export const getMe = async (req, res) => {
  * @param {import('express').Request} req
  * @param {import('express').Response} res
  */
-export const initiateGoogleSso = async (req, res) => {
+export const initiateGoogleSso = asyncHandler(async (req, res) => {
   const clientUrl = env.CLIENT_ORIGIN || 'http://localhost:3000';
 
   if (!isGoogleAuthConfigured()) {
@@ -193,7 +194,7 @@ export const initiateGoogleSso = async (req, res) => {
   }
 
   res.redirect(authUrl);
-};
+});
 
 /**
  * Handles Google SSO OAuth redirect callback.
@@ -201,7 +202,7 @@ export const initiateGoogleSso = async (req, res) => {
  * @param {import('express').Request} req
  * @param {import('express').Response} res
  */
-export const handleGoogleSsoCallback = async (req, res) => {
+export const handleGoogleSsoCallback = asyncHandler(async (req, res) => {
   const { code, state, error } = req.query;
   const clientUrl = env.CLIENT_ORIGIN || 'http://localhost:3000';
   const wantsJson = req.query.json === 'true' || req.headers.accept?.includes('application/json');
@@ -280,7 +281,7 @@ export const handleGoogleSsoCallback = async (req, res) => {
     }
     res.redirect(`${clientUrl}/login?error=${encodeURIComponent(message)}`);
   }
-};
+});
 
 /**
  * Unified Google OAuth callback dispatcher.
@@ -288,7 +289,7 @@ export const handleGoogleSsoCallback = async (req, res) => {
  * @param {import('express').Request} req
  * @param {import('express').Response} res
  */
-export const handleGoogleCallback = async (req, res) => {
+export const handleGoogleCallback = asyncHandler(async (req, res) => {
   const { state } = req.query;
 
   let flow = 'sso';
@@ -308,12 +309,12 @@ export const handleGoogleCallback = async (req, res) => {
   // Google Drive connector flow (to be fully handled in Phase 10)
   const clientUrl = env.CLIENT_ORIGIN || 'http://localhost:3000';
   res.redirect(`${clientUrl}/profile?tab=cloud-integrations&google_auth=success`);
-};
+});
 
 /**
  * Initiates Google Drive OAuth connection (Connector placeholder).
  */
-export const connectGoogleDrive = async (req, res) => {
+export const connectGoogleDrive = asyncHandler(async (req, res) => {
   const userId = req.user?._id || req.user?.id;
   if (!userId) {
     throw new UnauthenticatedError('User authentication is required to connect Google Drive.');
@@ -334,22 +335,22 @@ export const connectGoogleDrive = async (req, res) => {
   }
 
   res.redirect(authUrl);
-};
+});
 
 /**
  * Disconnects Google Drive integration.
  */
-export const disconnectGoogleDriveRoute = async (req, res) => {
+export const disconnectGoogleDriveRoute = asyncHandler(async (_req, res) => {
   res.status(HTTP_STATUS.OK).json({
     success: true,
     message: 'Google Drive disconnected successfully.',
   });
-};
+});
 
 /**
  * Checks Google Drive connection status.
  */
-export const getGoogleDriveStatus = async (req, res) => {
+export const getGoogleDriveStatus = asyncHandler(async (req, res) => {
   const drive = req.user?.integrations?.googleDrive || {};
   res.status(HTTP_STATUS.OK).json({
     success: true,
@@ -361,14 +362,14 @@ export const getGoogleDriveStatus = async (req, res) => {
       connectedAt: drive.connectedAt || null,
     },
   });
-};
+});
 
 /**
  * Toggles Google Drive integration.
  */
-export const toggleGoogleDriveRoute = async (_req, res) => {
+export const toggleGoogleDriveRoute = asyncHandler(async (_req, res) => {
   res.status(HTTP_STATUS.OK).json({
     success: true,
     message: 'Google Drive status updated successfully.',
   });
-};
+});

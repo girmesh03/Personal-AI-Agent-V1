@@ -62,7 +62,7 @@ export const deleteAccount = async (userId) => {
   }
 
   const [sessionResult, identityResult] = await Promise.all([
-    Session.deleteMany({ user: userId }),
+    Session.deleteMany({ userId }),
     AuthIdentity.deleteMany({ userId }),
     User.findByIdAndDelete(userId),
   ]);

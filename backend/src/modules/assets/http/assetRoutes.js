@@ -5,7 +5,6 @@
 
 import { Router } from 'express';
 import { requireUser } from '../../../infrastructure/http/middleware/requireUser.js';
-import { csrfProtection } from '../../../infrastructure/http/middleware/csrfProtection.js';
 import { uploadMultipleAssets } from './uploadMiddleware.js';
 import * as assetController from './assetController.js';
 
@@ -18,7 +17,7 @@ router.use(requireUser);
  * @route POST /api/v1/assets/upload
  * @desc Ingest single or multi-part assets (max 50MB, max 5 files)
  */
-router.post('/upload', csrfProtection, uploadMultipleAssets, assetController.uploadAsset);
+router.post('/upload', uploadMultipleAssets, assetController.uploadAsset);
 
 /**
  * @route GET /api/v1/assets
@@ -33,9 +32,15 @@ router.get('/', assetController.listAssets);
 router.get('/:id', assetController.getAsset);
 
 /**
+ * @route POST /api/v1/assets/:id/extract
+ * @desc Parse and extract text representation from document asset
+ */
+router.post('/:id/extract', assetController.extractAssetContent);
+
+/**
  * @route DELETE /api/v1/assets/:id
  * @desc Soft delete an asset
  */
-router.delete('/:id', csrfProtection, assetController.deleteAsset);
+router.delete('/:id', assetController.deleteAsset);
 
 export default router;

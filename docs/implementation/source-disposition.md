@@ -38,7 +38,7 @@
 | 23 | `backend/src/services/storageService.js` | `backend/src/modules/assets/storage/storageService.js` (bridge: `backend/src/services/storageService.js`) | Private durable object storage service with checksum validation and signed URLs. | Implemented (Phase 3, Task 3.1) |
 | 24 | `backend/src/services/telegramService.js` | `backend/src/modules/connectors/telegram/telegramService.js` | Telegram delivery service: formatting, preview cards, channel delivery with approval. | Pending |
 | 25 | `backend/src/services/ttsService.js` | `backend/src/modules/audio/ttsService.js` | Optional remote TTS synthesis with cost controls and user consent. | Pending |
-| 26 | `backend/src/utils/attachmentProcessor.js` | Split: `assets/processing/assetProcessor.js`, `documents/ingestion/*` | Deterministic file extraction, metadata extraction, text normalization, and chunking. | Pending |
+| 26 | `backend/src/utils/attachmentProcessor.js` | Split: `modules/assets/services/assetService.js`, `modules/documents/ingestion/documentParser.js` | Deterministic file extraction, metadata extraction, text normalization, and chunking. | Implemented (Phase 3, Task 3.3) |
 | 27 | `backend/src/utils/audioChunker.js` | `backend/src/modules/audio/audioChunker.js` | Deterministic FFmpeg media chunking and conversion utilities. | Pending |
 | 28 | `backend/src/utils/constants.js` | `backend/src/utils/constants.js` | System limits, HTTP status codes, action categories, role definitions. | Implemented (Phase 1) |
 | 29 | `backend/src/utils/errorFormatter.js` | `backend/src/utils/errorFormatter.js` | Provider-specific error mapping into standardized domain errors. | Implemented (Phase 1) |

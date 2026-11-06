@@ -24,7 +24,9 @@ import { logger } from '../../../config/logger.js';
  * @returns {string} Absolute path to storage root
  */
 export const getPrivateStorageRoot = () => {
-  const root = process.env.STORAGE_LOCAL_ROOT
+  const root = env.STORAGE_LOCAL_ROOT
+    ? path.resolve(env.STORAGE_LOCAL_ROOT)
+    : process.env.STORAGE_LOCAL_ROOT
     ? path.resolve(process.env.STORAGE_LOCAL_ROOT)
     : path.resolve(process.cwd(), 'storage/private');
 

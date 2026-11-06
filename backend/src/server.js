@@ -7,6 +7,7 @@ import http from 'node:http';
 import app from './app.js';
 import { env } from './config/env.js';
 import { logger } from './config/logger.js';
+import { connectDB, disconnectDB } from './infrastructure/database/connection.js';
 
 let server = null;
 
@@ -16,8 +17,16 @@ let server = null;
  * @param {number} [portOverride] - Optional port to bind to.
  * @returns {Promise<http.Server>} Running HTTP server instance.
  */
-export const startServer = (portOverride = null) => {
+export const startServer = async (portOverride = null) => {
   const port = portOverride ?? env.PORT;
+
+  // Ensure database connection is established
+  try {
+    await connectDB();
+  } catch (dbErr) {
+    logger.error(`[SERVER_START_ERROR] Failed to connect to MongoDB: ${dbErr.message}`, dbErr);
+    throw dbErr;
+  }
 
   return new Promise((resolve, reject) => {
     try {
@@ -78,6 +87,7 @@ const handleShutdown = async (signal) => {
   logger.info(`Received ${signal}. Initiating graceful shutdown...`);
   try {
     await stopServer();
+    await disconnectDB();
     logger.info('Graceful shutdown completed.');
     process.exit(0);
   } catch (err) {

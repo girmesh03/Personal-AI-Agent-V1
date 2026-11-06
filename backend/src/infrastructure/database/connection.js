@@ -75,10 +75,8 @@ export const getDbStatus = () => {
  * @returns {Promise<mongoose.Connection>}
  */
 export const connectDB = async (uriOverride = null) => {
-  if (isShuttingDown) {
-    logger.warn('Skipping connectDB: application is shutting down');
-    return mongoose.connection;
-  }
+  // If previously marked as shutting down, reset flag since an explicit connection is requested
+  isShuttingDown = false;
 
   if (mongoose.connection.readyState === 1) {
     return mongoose.connection;

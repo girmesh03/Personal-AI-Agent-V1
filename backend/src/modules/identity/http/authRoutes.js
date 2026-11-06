@@ -99,27 +99,27 @@ router.get('/google/callback', handleGoogleCallback);
  * @desc Initiate Google OAuth connection for integrations.
  * @access Protected
  */
-router.get('/google/connect', connectGoogleDrive);
+router.get('/google/connect', requireUser, connectGoogleDrive);
 
 /**
  * @route POST /api/v1/auth/google/disconnect
  * @desc Disconnect Google Drive integration.
  * @access Protected
  */
-router.post('/google/disconnect', disconnectGoogleDriveRoute);
+router.post('/google/disconnect', requireUser, disconnectGoogleDriveRoute);
 
 /**
  * @route GET /api/v1/auth/google/status
  * @desc Check Google Drive integration connection status.
  * @access Protected
  */
-router.get('/google/status', getGoogleDriveStatus);
+router.get('/google/status', requireUser, getGoogleDriveStatus);
 
 /**
  * @route POST /api/v1/auth/google/toggle
  * @desc Enable or disable Google Drive integration without disconnecting.
  * @access Protected
  */
-router.post('/google/toggle', toggleGoogleDriveRoute);
+router.post('/google/toggle', requireUser, toggleGoogleDriveRoute);
 
 export default router;

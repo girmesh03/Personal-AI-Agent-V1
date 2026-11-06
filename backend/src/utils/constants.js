@@ -165,10 +165,11 @@ export const PASSWORD_MIN_LENGTH = 8;
 
 /**
  * Bcrypt salt rounds factor for password hashing.
+ * In test environment, uses 4 rounds to ensure lightning-fast execution without compromising security in production (12).
  * @constant
  * @type {number}
  */
-export const BCRYPT_SALT_ROUNDS = 12;
+export const BCRYPT_SALT_ROUNDS = env.NODE_ENV === 'test' ? 4 : 12;
 
 /**
  * JWT token lifespan configuration referencing validated environment variables.
@@ -328,5 +329,19 @@ export const ATTACHMENT_CONSTANTS = Object.freeze({
   ]),
   ALLOWED_IMAGE_EXTENSIONS: Object.freeze(['.jpg', '.jpeg', '.png', '.webp', '.gif', '.svg']),
   ALLOWED_IMAGE_MIME_TYPES: Object.freeze(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml']),
+});
+
+/**
+ * Resource boundaries for deterministic document parsing (Task 3.3).
+ * Defends against memory exhaustion, zip bombs, and unbounded context window inflation.
+ * @constant
+ */
+export const DOCUMENT_PARSING_LIMITS = Object.freeze({
+  MAX_PAGES: 100, // Max pages to extract from PDF
+  MAX_SHEETS: 20, // Max sheets to process in a spreadsheet
+  MAX_CELLS: 25000, // Max total cells to extract from spreadsheet
+  MAX_CSV_ROWS: 5000, // Max rows in CSV
+  MAX_TEXT_CHARS: 500000, // Max text characters (~100k tokens)
+  PREVIEW_CHARS: 2000, // Characters for quick preview representation
 });
 

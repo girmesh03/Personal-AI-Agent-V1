@@ -9,6 +9,7 @@ import { HTTP_STATUS } from '../../../utils/constants.js';
 import { UnauthenticatedError, ConflictError } from '../../../shared/errors/AppError.js';
 import { clearAuthCookies } from '../../../infrastructure/security/tokenService.js';
 import { exportAccountData, deleteAccount } from '../services/accountService.js';
+import { asyncHandler } from '../../../infrastructure/http/middleware/asyncHandler.js';
 
 /**
  * Retrieves authenticated user profile.
@@ -16,7 +17,7 @@ import { exportAccountData, deleteAccount } from '../services/accountService.js'
  * @param {import('express').Request} req
  * @param {import('express').Response} res
  */
-export const getProfile = async (req, res) => {
+export const getProfile = asyncHandler(async (req, res) => {
   const userObj = req.user.toJSON ? req.user.toJSON() : req.user;
 
   res.status(HTTP_STATUS.OK).json({
@@ -26,7 +27,7 @@ export const getProfile = async (req, res) => {
       user: userObj,
     },
   });
-};
+});
 
 /**
  * Updates editable profile attributes (firstName, lastName, email, position).
@@ -34,7 +35,7 @@ export const getProfile = async (req, res) => {
  * @param {import('express').Request} req
  * @param {import('express').Response} res
  */
-export const updateProfile = async (req, res) => {
+export const updateProfile = asyncHandler(async (req, res) => {
   const { firstName, lastName, email, position } = req.validated?.body || req.body || {};
 
   const user = await User.findById(req.user._id);
@@ -63,7 +64,7 @@ export const updateProfile = async (req, res) => {
       user: user.toJSON ? user.toJSON() : user,
     },
   });
-};
+});
 
 /**
  * Configures BYOK provider credentials using envelope encryption (NFR-SEC-002, Scenario U).
@@ -72,7 +73,7 @@ export const updateProfile = async (req, res) => {
  * @param {import('express').Request} req
  * @param {import('express').Response} res
  */
-export const updateUserApiKeys = async (req, res) => {
+export const updateUserApiKeys = asyncHandler(async (req, res) => {
   const { geminiApiKey, addisApiKey } = req.validated?.body || req.body || {};
 
   const user = await User.findById(req.user._id)
@@ -108,7 +109,7 @@ export const updateUserApiKeys = async (req, res) => {
       },
     },
   });
-};
+});
 
 /**
  * Retrieves the masked status of configured BYOK credentials.
@@ -116,7 +117,7 @@ export const updateUserApiKeys = async (req, res) => {
  * @param {import('express').Request} req
  * @param {import('express').Response} res
  */
-export const getApiKeyStatus = async (req, res) => {
+export const getApiKeyStatus = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user._id)
     .select('+settings.apiKeys.geminiApiKey +settings.apiKeys.addisApiKey');
 
@@ -145,7 +146,7 @@ export const getApiKeyStatus = async (req, res) => {
       addisApiKey: addisRedacted,
     },
   });
-};
+});
 
 /**
  * Exports user profile and account configuration data without secrets (FR-CORE-SEC-003).
@@ -153,7 +154,7 @@ export const getApiKeyStatus = async (req, res) => {
  * @param {import('express').Request} req
  * @param {import('express').Response} res
  */
-export const exportData = async (req, res) => {
+export const exportData = asyncHandler(async (req, res) => {
   const exportPayload = await exportAccountData(req.userId);
 
   res.status(HTTP_STATUS.OK).json({
@@ -161,7 +162,7 @@ export const exportData = async (req, res) => {
     message: 'Account data exported successfully.',
     data: exportPayload,
   });
-};
+});
 
 /**
  * Permanently deletes the authenticated user account and revokes active sessions (FR-CORE-SEC-003).
@@ -169,7 +170,7 @@ export const exportData = async (req, res) => {
  * @param {import('express').Request} req
  * @param {import('express').Response} res
  */
-export const deleteUserAccount = async (req, res) => {
+export const deleteUserAccount = asyncHandler(async (req, res) => {
   const result = await deleteAccount(req.userId);
 
   clearAuthCookies(res);
@@ -179,7 +180,7 @@ export const deleteUserAccount = async (req, res) => {
     message: 'User account and active sessions permanently deleted.',
     data: result,
   });
-};
+});
 
 export default {
   getProfile,
