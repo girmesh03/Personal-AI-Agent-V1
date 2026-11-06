@@ -19,6 +19,7 @@ import {
   branchParamSchema,
 } from './conversationSchemas.js';
 import turnRoutes from './turnRoutes.js';
+import runRoutes from './runRoutes.js';
 
 const router = Router();
 
@@ -28,6 +29,10 @@ router.use(requireUser);
 // Mount turn subroutes for both :id and :threadId route parameter conventions
 router.use('/:id/turns', turnRoutes);
 router.use('/:threadId/turns', turnRoutes);
+
+// Mount run subroutes for both :id and :threadId route parameter conventions
+router.use('/:id/runs', runRoutes);
+router.use('/:threadId/runs', runRoutes);
 
 // Thread collection routes
 router.post('/', validate(createThreadSchema), threadController.createThread);

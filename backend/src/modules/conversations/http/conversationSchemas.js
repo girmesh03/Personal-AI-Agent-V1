@@ -310,3 +310,56 @@ export const listTurnsSchema = z.object({
   }),
 });
 
+/**
+ * Schema for retrieving durable run events (JSON replay endpoint)
+ */
+export const getRunEventsSchema = z.object({
+  params: z.object({
+    threadId: objectIdSchema.optional(),
+    id: objectIdSchema.optional(),
+    runId: objectIdSchema,
+  }).refine(data => data.threadId || data.id, {
+    message: 'Thread ID is required.',
+  }),
+  query: z.object({
+    afterSequence: z.coerce.number().int().min(0).default(0).optional(),
+    limit: z.coerce.number().int().min(1).max(500).default(100).optional(),
+  }),
+});
+
+/**
+ * Schema for SSE stream connection and replay
+ */
+export const streamRunEventsSchema = z.object({
+  params: z.object({
+    threadId: objectIdSchema.optional(),
+    id: objectIdSchema.optional(),
+    runId: objectIdSchema,
+  }).refine(data => data.threadId || data.id, {
+    message: 'Thread ID is required.',
+  }),
+  query: z.object({
+    lastEventId: z.string().trim().optional(),
+    cursor: z.string().trim().optional(),
+  }).optional(),
+});
+
+/**
+ * Schema for posting an event to a run (authorized/internal pipeline)
+ */
+export const createRunEventSchema = z.object({
+  params: z.object({
+    threadId: objectIdSchema.optional(),
+    id: objectIdSchema.optional(),
+    runId: objectIdSchema,
+  }).refine(data => data.threadId || data.id, {
+    message: 'Thread ID is required.',
+  }),
+  body: z.object({
+    type: z.string().trim().min(1, 'Event type is required.'),
+    data: z.record(z.string(), z.any()).optional().default({}),
+    sequence: z.number().int().min(1).optional(),
+  }),
+});
+
+

@@ -443,3 +443,33 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
    - `npm run lint`: 0 errors.
    - `npm run build:web`: 1,513 modules transformed, 0 errors.
 
+---
+
+## 25. Task 4.4: RunEvent Durable Event Log & Stream Replay
+
+### Key Implementation Findings & Defenses
+1. **Canonical Event Envelope (Section 11.1):**
+   - Implemented standard event structure independent of provider or frontend framework:
+     `{ version: 1, runId, threadId, turnId, sequence, eventId: "${runId}:${sequence}", type, timestamp, data }`.
+   - Guaranteed monotonic sequence numbers per run starting at 1 with compound uniqueness `{ runId: 1, sequence: 1 }` preventing collision or out-of-order delivery.
+2. **Resilient Reconnection & Historical Replay:**
+   - Stream endpoint `GET /api/v1/threads/:id/runs/:runId/stream` inspects `Last-Event-ID` header or `?lastEventId=` / `?cursor=` query parameter.
+   - Automatically replays missed historical events from the database in strict ascending sequence order before piping live events from the in-memory pub/sub bus (`runEventEmitter`).
+   - JSON replay endpoint `GET /api/v1/threads/:id/runs/:runId/events` supports cursor pagination via `afterSequence` and `limit`.
+3. **Deterministic Stream Closure & Heartbeats:**
+   - Emitting terminal events (`run.completed`, `run.failed`, `run.cancelled`) terminates the SSE stream cleanly with `res.end()`.
+   - Active streams emit periodic SSE heartbeats (`: heartbeat\n\n` every 15s) to keep connections alive through reverse proxies and load balancers.
+   - Client disconnects (`req.on('close')`) trigger immediate cleanup of event listeners and timers, preventing memory leaks.
+4. **Turn Lifecycle State Machine Integration:**
+   - Integrated event emission into `turnService.js`:
+     - `createTurn`, `retryTurn`, and `continueTurn` automatically record `run.accepted`.
+     - `cancelTurn` automatically records `run.cancel_requested` and `run.cancelled` with reason.
+5. **Strict Isolation (NFR-SEC-004):**
+   - All run event queries and streams verify thread and run ownership against `req.user.id`.
+   - Foreign probing returns uniform 404 `NOT_FOUND`.
+6. **Verification Evidence:**
+   - `npm run test:events`: 13/13 tests passing in 62.1s across 5 test groups.
+   - `npm run test:turns`: 14/14 tests passing in 68.6s (zero regressions).
+   - `npm run lint`: 0 errors.
+
+

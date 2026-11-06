@@ -105,7 +105,7 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
 ### Phase 4: Durable Threads, Turns, Messages, Events
 - **Status:** in_progress
 - **Branch:** `phase-4-conversations` (branched from `main` at `94dcecf`)
-- **Current Task:** Task 4.4 — RunEvent durable event log with sequence cursors for stream replay
+- **Current Task:** Task 4.5 — Conversation and message API tests & Phase 4 Gate Review
 - **Completed Tasks:**
   - **Task 4.1 — Thread, Turn, Message, and MessageBranch Persistence Models:**
     - Defined `CONVERSATION_CONSTANTS` in `backend/src/utils/constants.js`.
@@ -133,6 +133,14 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
     - Implemented native HTTP integration test suite `tests/api/turn-lifecycle.test.js` (14/14 tests passing in 73.3s).
     - Added `"test:turns"` script to `package.json`.
     - Quality verification: 0 lint errors, 1,513 client modules transformed in 52.7s. Clean working tree.
+  - **Task 4.4 — RunEvent Durable Event Log & Stream Replay:**
+    - Created Zod validation schemas in `backend/src/modules/conversations/http/conversationSchemas.js` (`getRunEventsSchema`, `streamRunEventsSchema`, `createRunEventSchema`).
+    - Implemented `runEventService.js` with canonical event envelope formatting (`version: 1`, `runId`, `threadId`, `turnId`, `sequence`, `eventId`, `type`, `timestamp`, `data`), monotonic sequence number allocation per run, compound uniqueness enforcement, cursor-based JSON event replay (`afterSequence`), in-process pub/sub event bus (`runEventEmitter`), Server-Sent Events (SSE) live streaming with reconnection (`Last-Event-ID`), 15-second heartbeats (`: heartbeat\n\n`), client disconnect cleanup, and deterministic stream closure on terminal events (`run.completed`, `run.failed`, `run.cancelled`).
+    - Integrated event logging into `turnService.js` lifecycle state machine: automatically records `run.accepted` on turn creation, retry, and continue; records `run.cancel_requested` and `run.cancelled` on turn cancellation.
+    - Implemented `runEventController.js` and `runRoutes.js` mounted at `/:id/runs` and `/:threadId/runs` under `threadRoutes.js`.
+    - Implemented native HTTP integration test suite `tests/api/run-events.test.js` (13/13 tests passing in 62.1s).
+    - Added `"test:events"` script to `package.json`.
+    - Full regression: 14/14 tests passing on `npm run test:turns`. 0 lint errors.
 - **Completed Tasks:**
   - **Task 2.1 — Database Connection & Identity/Session Models:** Implemented MongoDB lifecycle engine, base schema options, User domain model with bcrypt password hashing, Session registry with token rotation and breach detection, AuthIdentity model, and integration test suite (`tests/api/identity-models.test.js`). Approved and committed on `phase-2-identity-and-sessions` (commit `f6a5a2a`).
   - **Task 2.2 — Authentication Service, Controllers, and Google OAuth 2.0:** Implemented token service, Zod request validation middleware, auth schemas, name derivation, Google OAuth 2.0 with HMAC signed state parameter, auth service, auth controller, auth routes, and native HTTP integration test suite (`tests/api/auth.test.js`). Approved and committed on `phase-2-identity-and-sessions` (commit `4dfeb59`).
@@ -307,8 +315,9 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
 | Phase 3 Acceptance Suite | `npm run test:asset-suite` | 10 passed | 10/10 passed in 51.2s | PASS |
 | Conversation Models | `npm run test:conversation-models` | 9 passed | 9/9 passed in 38.4s | PASS |
 | Thread Management APIs | `npm run test:threads` | 11 passed | 11/11 passed in 66.0s | PASS |
-| Turn Lifecycle APIs | `npm run test:turns` | 14 passed | 14/14 passed in 73.3s | PASS |
-| Full API Test Suite | `npm run test:api` | 170 passed | 170/170 passed in full run | PASS |
+| Turn Lifecycle APIs | `npm run test:turns` | 14 passed | 14/14 passed in 68.6s | PASS |
+| Run Events & Replay APIs | `npm run test:events` | 13 passed | 13/13 passed in 62.1s | PASS |
+| Full API Test Suite | `npm run test:api` | 183 passed | 183/183 passed in full run | PASS |
 | Quality Verification | `npm run verify` | Lint & Build pass | 0 lint errors, 1,513 client modules built | PASS |
 | Client Dist Cleanup | `npm run clean:client` | Clean client/dist/ | Clean working tree | PASS |
 
@@ -329,12 +338,13 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
 | 2026-11-06T22:06 | Message attachment missing filename validation | 1 | Provided default filename in turnService.createTurn from asset name |
 | 2026-11-06T22:08 | E11000 duplicate key on { threadId, idempotencyKey: null } | 1 | Replaced sparse index with partialFilterExpression: { idempotencyKey: { $type: 'string' } } and default: undefined |
 | 2026-11-06T22:15 | Express 5 req.query is getter-only, cannot assign | 1 | Wrapped assignment with Object.defineProperty fallback in validate.js |
+| 2026-11-06T22:38 | ERR_MODULE_NOT_FOUND express-async-handler in runEventController | 1 | Switched to native asyncHandler middleware in infrastructure/http/middleware/asyncHandler.js |
 
 ## 5-Question Reboot Check
 | Question | Answer |
 |----------|--------|
-| Where am I? | Phase 4: Durable Threads, Turns, Messages, Events, Task 4.3 Completed & Verified |
-| Where am I going? | Task 4.4: RunEvent durable event log with sequence cursors for stream replay |
+| Where am I? | Phase 4: Durable Threads, Turns, Messages, Events, Task 4.4 Completed & Verified |
+| Where am I going? | Task 4.5: Conversation and message API tests & Phase 4 Gate Review |
 | What's the goal? | Implement Personal AI Agent V1 (Operon) per master specification with full functionality preservation, correct architecture, and owner review gates |
-| What have I learned? | Express 5 protects IncomingMessage query and params with accessor getters, requiring Object.defineProperty for validated request enrichment. MongoDB partial indexes with $type string prevent collision of null idempotency keys across turns. Atomic lease locks guarantee single-generation runs. |
-| What have I done? | Implemented Task 4.3: turnService.js, turnController.js, turnRoutes.js, updated conversationSchemas.js, validate.js, Message.js, Turn.js. Added test:turns script. Verified 14/14 tests pass. Verified 0 lint errors and clean Vite client build. |
+| What have I learned? | Canonical event streaming requires versioned envelopes with monotonic sequences per run. Reconnection using Last-Event-ID safely combines historical DB replay with live in-memory event dispatch, terminated deterministically on terminal event types. |
+| What have I done? | Implemented Task 4.4: runEventService.js, runEventController.js, runRoutes.js, updated conversationSchemas.js, turnService.js, and package.json. Added test:events script. Verified 13/13 tests pass. Zero regressions on 14/14 turn tests. 0 lint errors. |

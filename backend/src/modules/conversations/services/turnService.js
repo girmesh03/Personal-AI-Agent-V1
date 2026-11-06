@@ -14,6 +14,7 @@ import { Message } from '../persistence/Message.js';
 import { MessageBranch } from '../persistence/MessageBranch.js';
 import { AgentRun } from '../persistence/AgentRun.js';
 import { Asset } from '../../assets/persistence/Asset.js';
+import { runEventService } from './runEventService.js';
 import {
   NotFoundError,
   BadRequestError,
@@ -274,6 +275,24 @@ export async function createTurn(userId, threadId, turnData = {}) {
     }
   );
 
+  // 12. Record initial run.accepted event
+  try {
+    await runEventService.recordEvent({
+      runId: run._id,
+      threadId: thread._id,
+      turnId: turn._id,
+      owner: userId,
+      type: 'run.accepted',
+      data: {
+        turnSequence: turn.turnSequence,
+        modelSelection: run.model,
+        status: run.status,
+      },
+    });
+  } catch (_e) {
+    // Non-blocking event logging failure
+  }
+
   return {
     turn,
     userMessage,
@@ -352,6 +371,24 @@ export async function retryTurn(userId, threadId, turnId, options = {}) {
 
   // 7. Atomically acquire run lock for the new run
   const updatedTurn = await Turn.acquireRunLock(turn._id, run._id);
+
+  // 8. Record run.accepted event for new retry run
+  try {
+    await runEventService.recordEvent({
+      runId: run._id,
+      threadId: thread._id,
+      turnId: turn._id,
+      owner: userId,
+      type: 'run.accepted',
+      data: {
+        generationAttempt: turn.generationAttempts,
+        modelSelection: run.model,
+        status: run.status,
+      },
+    });
+  } catch (_e) {
+    // Non-blocking event logging failure
+  }
 
   return {
     turn: updatedTurn,
@@ -610,6 +647,24 @@ export async function continueTurn(userId, threadId, turnId, options = {}) {
 
   const updatedTurn = await Turn.acquireRunLock(turn._id, run._id);
 
+  // 6. Record run.accepted event for continuation run
+  try {
+    await runEventService.recordEvent({
+      runId: run._id,
+      threadId: thread._id,
+      turnId: turn._id,
+      owner: userId,
+      type: 'run.accepted',
+      data: {
+        isContinuation: true,
+        modelSelection: run.model,
+        status: run.status,
+      },
+    });
+  } catch (_e) {
+    // Non-blocking event logging failure
+  }
+
   return {
     turn: updatedTurn,
     run,
@@ -665,6 +720,28 @@ export async function cancelTurn(userId, threadId, turnId, options = {}) {
       run.cancellationReason = reason;
       run.completedAt = new Date();
       await run.save();
+
+      // Record cancel_requested and cancelled events
+      try {
+        await runEventService.recordEvent({
+          runId: run._id,
+          threadId: thread._id,
+          turnId: turn._id,
+          owner: userId,
+          type: 'run.cancel_requested',
+          data: { reason },
+        });
+        await runEventService.recordEvent({
+          runId: run._id,
+          threadId: thread._id,
+          turnId: turn._id,
+          owner: userId,
+          type: 'run.cancelled',
+          data: { reason },
+        });
+      } catch (_e) {
+        // Non-blocking event logging failure
+      }
     }
 
     await Turn.releaseRunLock(turn._id, turn.activeRunId);
