@@ -7,6 +7,7 @@ import { Router } from 'express';
 import { HTTP_STATUS } from '../../utils/constants.js';
 import { env } from '../../config/env.js';
 import { isDbConnected, getDbStatus } from '../database/connection.js';
+import authRoutes from '../../modules/identity/http/authRoutes.js';
 
 const router = Router();
 
@@ -24,5 +25,11 @@ router.get('/health', (_req, res) => {
     environment: env.NODE_ENV,
   });
 });
+
+/**
+ * Authentication and identity routes.
+ * Mounts: /api/v1/auth/*
+ */
+router.use('/auth', authRoutes);
 
 export default router;

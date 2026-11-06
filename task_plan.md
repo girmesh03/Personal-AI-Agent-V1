@@ -6,7 +6,7 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
 Deliver a fully verified, production-grade Personal AI Agent V1 with provider-neutral LangChain/LangGraph architecture, single root package manifest, protected MUI theme, durable multimodal chat lifecycle, Postman-style backend API integration test suite, and complete functionality preservation across all 214 historical V0 source sections.
 
 ## Next Step
-Implement Task 2.2: Authentication service and controllers (`authService.js`, `authController.js`) covering registration, login, token refresh rotation, logout, `getMe`/`getProfile`, and Google OAuth 2.0 with HMAC state validation.
+Implement Task 2.3: Session middleware (`requireUser`), CSRF protection, and route-level rate limiting.
 
 ## Current Phase
 Phase 2: Identity, Sessions, and Account Security - in_progress
@@ -39,9 +39,9 @@ Phase 2: Identity, Sessions, and Account Security - in_progress
 - **Status:** complete
 
 ### Phase 2: Identity, Sessions, and Account Security
-- [x] Task 2.1: Database connection lifecycle, schema options, User, AuthIdentity, and Session models with secure refresh token rotation (Committed)
-- [/] Task 2.2: Email/password authentication, password hashing, and Google OAuth 2.0 with signed state validation (In Progress)
-- [ ] Task 2.3: Session middleware (`requireUser`), CSRF protection, and rate limiting
+- [x] Task 2.1: Database connection lifecycle, schema options, User, AuthIdentity, and Session models with secure refresh token rotation (Committed - f6a5a2a)
+- [x] Task 2.2: Email/password authentication, password hashing, and Google OAuth 2.0 with signed state validation (Committed)
+- [/] Task 2.3: Session middleware (`requireUser`), CSRF protection, and rate limiting (In Progress)
 - [ ] Task 2.4: Credential envelope encryption service for BYOK provider credentials
 - [ ] Task 2.5: Identity and session API tests
 - [ ] Phase 2 Gate & Owner Merge Review

@@ -47,9 +47,27 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
 ### Phase 2: Identity, Sessions, and Account Security
 - **Status:** in_progress
 - **Branch:** `phase-2-identity-and-sessions` (branched from `main` at `6c4b80d`)
-- **Current Task:** Task 2.2 — Authentication Service, Controllers, and Google OAuth 2.0 (In Progress)
+- **Current Task:** Task 2.3 — Session Middleware (`requireUser`), CSRF Protection, and Rate Limiting (In Progress)
 - **Completed Tasks:**
-  - **Task 2.1 — Database Connection & Identity/Session Models:** Implemented MongoDB lifecycle engine, base schema options, User domain model with bcrypt password hashing, Session registry with token rotation and breach detection, AuthIdentity model, and integration test suite (`tests/api/identity-models.test.js`). Approved and committed on `phase-2-identity-and-sessions`.
+  - **Task 2.1 — Database Connection & Identity/Session Models:** Implemented MongoDB lifecycle engine, base schema options, User domain model with bcrypt password hashing, Session registry with token rotation and breach detection, AuthIdentity model, and integration test suite (`tests/api/identity-models.test.js`). Approved and committed on `phase-2-identity-and-sessions` (commit `f6a5a2a`).
+  - **Task 2.2 — Authentication Service, Controllers, and Google OAuth 2.0:** Implemented token service, Zod request validation middleware, auth schemas, name derivation, Google OAuth 2.0 with HMAC signed state parameter, auth service, auth controller, auth routes, and native HTTP integration test suite (`tests/api/auth.test.js`). Approved and committed on `phase-2-identity-and-sessions`. 12/12 test scenarios passing.
+- Actions taken:
+  - Created `backend/src/infrastructure/security/tokenService.js` and compatibility bridge `backend/src/utils/token.js`.
+  - Created `backend/src/infrastructure/http/middleware/validate.js` and compatibility bridge `backend/src/middleware/validate.js`.
+  - Created `backend/src/modules/identity/http/authSchemas.js` and compatibility bridge `backend/src/validations/authValidation.js`.
+  - Created `backend/src/modules/identity/utils/nameDerivation.js` for smart name extraction from email (Invariant 6).
+  - Created `backend/src/modules/identity/services/googleAuthService.js` for Google OpenID Connect and HMAC state tokens.
+  - Created `backend/src/modules/identity/services/authService.js` and compatibility bridge `backend/src/services/authService.js`.
+  - Created `backend/src/modules/identity/http/authController.js` and compatibility bridge `backend/src/controllers/authController.js`.
+  - Created `backend/src/modules/identity/http/authRoutes.js` and compatibility bridge `backend/src/routes/authRoutes.js`.
+  - Mounted `authRoutes` in `backend/src/infrastructure/http/routes.js`.
+  - Enhanced `Session.rotateSession` to flexibly accept options objects and positional parameters.
+  - Updated `User.js` `toJSON()` to include both `id` and `_id`.
+  - Created `tests/api/auth.test.js` exercising 12 native HTTP integration test cases.
+  - Executed `npm run test:api` -> 25/25 tests passed across 3 test suites (`tests/api/health.test.js`, `tests/api/identity-models.test.js`, `tests/api/auth.test.js`).
+  - Executed `npm run verify` -> 0 lint errors, 1513 modules bundled in 11.56s.
+  - Executed `npm run clean:client` -> clean working tree.
+  - Updated `docs/implementation/source-disposition.md` (rows 12, 13, 32, 43, 57 marked Implemented).
 - Actions taken:
   - Created dedicated phase branch `phase-2-identity-and-sessions`.
   - Created `backend/src/infrastructure/database/schemaOptions.js` (`BASE_SCHEMA_OPTIONS`, `SUBDOCUMENT_SCHEMA_OPTIONS`) and `backend/src/config/schemaOptions.js` compatibility bridge.

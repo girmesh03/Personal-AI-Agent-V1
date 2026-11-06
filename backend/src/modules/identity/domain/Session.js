@@ -132,21 +132,38 @@ sessionSchema.statics.validateSession = async function validateSession(refreshTo
 /**
  * Rotates a refresh token within its existing session family.
  * Marks the old token revoked and stores the new token in the same lineage.
- * @param {Object} params
- * @param {string} params.oldRefreshToken
- * @param {string} params.newRefreshToken
- * @param {string} [params.userAgent]
- * @param {string} [params.ipAddress]
- * @param {number} [params.expiresInMs=604800000]
+ * Supports both options object and positional arguments for maximum robustness.
+ *
+ * @param {Object|string} oldOrParams
+ * @param {string} [newRefreshTokenPos]
+ * @param {Object} [options]
  * @returns {Promise<mongoose.Document>} The newly created session.
  */
-sessionSchema.statics.rotateSession = async function rotateSession({
-  oldRefreshToken,
-  newRefreshToken,
-  userAgent = null,
-  ipAddress = null,
-  expiresInMs = 7 * 24 * 60 * 60 * 1000,
-}) {
+sessionSchema.statics.rotateSession = async function rotateSession(
+  oldOrParams,
+  newRefreshTokenPos,
+  options = {}
+) {
+  let oldRefreshToken;
+  let newRefreshToken;
+  let userAgent = null;
+  let ipAddress = null;
+  let expiresInMs = 7 * 24 * 60 * 60 * 1000;
+
+  if (typeof oldOrParams === 'object' && oldOrParams !== null) {
+    oldRefreshToken = oldOrParams.oldRefreshToken;
+    newRefreshToken = oldOrParams.newRefreshToken;
+    userAgent = oldOrParams.userAgent || null;
+    ipAddress = oldOrParams.ipAddress || null;
+    expiresInMs = oldOrParams.expiresInMs || expiresInMs;
+  } else {
+    oldRefreshToken = oldOrParams;
+    newRefreshToken = newRefreshTokenPos;
+    userAgent = options.userAgent || null;
+    ipAddress = options.ipAddress || null;
+    expiresInMs = options.expiresInMs || expiresInMs;
+  }
+
   const currentSession = await this.validateSession(oldRefreshToken);
 
   // Revoke the old session

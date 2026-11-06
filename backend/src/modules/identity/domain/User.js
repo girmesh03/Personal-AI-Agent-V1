@@ -168,8 +168,8 @@ const userSchema = new mongoose.Schema(
     toJSON: {
       virtuals: true,
       transform: (_doc, ret) => {
+        ret.id = ret._id ? ret._id.toString() : ret.id;
         delete ret.__v;
-        delete ret.id;
         delete ret.password;
         if (ret.integrations?.googleDrive) {
           delete ret.integrations.googleDrive.accessToken;

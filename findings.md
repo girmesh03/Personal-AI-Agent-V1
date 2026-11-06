@@ -118,3 +118,21 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
   - Safe serialization: `toJSON` strips password, third-party integration tokens (Google Drive access/refresh tokens, Telegram botToken), and raw API keys, while projecting boolean capability flags (`hasGeminiKey`, `hasAddisKey`).
 - **External Provider Linking (`modules/identity/domain/AuthIdentity.js`):**
   - Normalizes external OAuth identities with compound unique index on `{ provider: 1, providerId: 1 }`.
+
+## 11. Authentication Services & Controllers Architecture (Task 2.2)
+- **Token Infrastructure (`infrastructure/security/tokenService.js`):**
+  - Dual JWT issuance: short-lived 15m `accessToken` and 7d `refreshToken` (uniform lifespan, strictly zero remember-me variation).
+  - Secure HttpOnly cookies with `sameSite: 'lax'` (development) / `sameSite: 'none'` (production with HTTPS) and `path: '/'`.
+  - Comprehensive clearing across `/`, `/api/v1`, and `/api/v1/auth`.
+- **Validation Engine (`infrastructure/http/middleware/validate.js` & `modules/identity/http/authSchemas.js`):**
+  - Replaced legacy `express-validator` with type-safe Zod schema validation middleware.
+  - Strict enforcement of Single-User Invariant: injecting `role` is immediately rejected with 400 Bad Request.
+  - Password complexity checked against canonical character class `[A-Za-z\d@$!%*?&]`.
+- **Google OAuth 2.0 & SSO (`modules/identity/services/googleAuthService.js`):**
+  - Zero heavy external dependencies: leverages native Node.js `fetch` for Google OpenID Connect endpoints.
+  - Tamper-proof HMAC signed state token signed with `JWT_ACCESS_SECRET` prevents OAuth CSRF attacks.
+  - Graceful fallback: when Google OAuth credentials are not configured, endpoints report unconfigured state rather than crashing.
+- **Session Registry Integration:**
+  - Login creates new session with fresh UUID `family`.
+  - Refresh rotates token within the same family.
+  - Replay of revoked tokens immediately terminates the entire lineage with `TOKEN_REUSE_DETECTED`.
