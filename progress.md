@@ -47,11 +47,23 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
 ### Phase 2: Identity, Sessions, and Account Security
 - **Status:** in_progress
 - **Branch:** `phase-2-identity-and-sessions` (branched from `main` at `6c4b80d`)
-- **Current Task:** Task 2.4 — Credential Envelope Encryption Service for BYOK Provider Credentials (In Progress)
+- **Current Task:** Task 2.5 — Comprehensive Identity & Session API Test Suite
+- **Completed Tasks:**
+  - **Task 2.1 — Database Connection Lifecycle & Domain Models:** Committed (`f6a5a2a`).
+  - **Task 2.2 — Auth Service, Controllers, and Google OAuth 2.0:** Committed (`4dfeb59`).
+  - **Task 2.3 — Session Middleware, CSRF Protection, and Rate Limiting:** Committed (`f3debef`).
+  - **Task 2.4 — Credential Envelope Encryption Service for BYOK Provider Credentials:** Completed & Verified.
+    - Implemented `modules/identity/services/credentialEncryption.js` (AES-256-GCM, 96-bit unique nonces, HKDF KEK derivation with key versioning `v1`, ephemeral DEK zeroed out after use, user/credential bound AAD, rotation support, serialization/deserialization, and `redactCredential`).
+    - Added compatibility bridge `services/credentialEncryption.js`.
+    - Added `setEncryptedApiKey`, `getDecryptedApiKey`, and `getRedactedApiKey` methods to `User` model (`modules/identity/domain/User.js`).
+    - Implemented `modules/identity/http/profileSchemas.js`, `modules/identity/http/profileController.js`, and `modules/identity/http/profileRoutes.js` (with bridges `controllers/userController.js` and `routes/userRoutes.js`).
+    - Mounted `/api/v1/users` and `/api/v1/user` in `infrastructure/http/routes.js`.
+    - Verified with 11 new integration tests in `tests/api/credential-encryption.test.js` (all 45/45 tests passing in suite).
+    - Verified `npm run verify` passed (0 lint errors, client bundle built cleanly in 2.19s).
 - **Completed Tasks:**
   - **Task 2.1 — Database Connection & Identity/Session Models:** Implemented MongoDB lifecycle engine, base schema options, User domain model with bcrypt password hashing, Session registry with token rotation and breach detection, AuthIdentity model, and integration test suite (`tests/api/identity-models.test.js`). Approved and committed on `phase-2-identity-and-sessions` (commit `f6a5a2a`).
   - **Task 2.2 — Authentication Service, Controllers, and Google OAuth 2.0:** Implemented token service, Zod request validation middleware, auth schemas, name derivation, Google OAuth 2.0 with HMAC signed state parameter, auth service, auth controller, auth routes, and native HTTP integration test suite (`tests/api/auth.test.js`). Approved and committed on `phase-2-identity-and-sessions` (commit `4dfeb59`).
-  - **Task 2.3 — Session Middleware, CSRF Protection & Rate Limiting:** Implemented `requireUser` and `optionalUser` session middleware, Origin/Referer and double-submit cookie CSRF mitigation, route-level `authRateLimiter` and `apiRateLimiter` using `express-rate-limit`, and native HTTP integration test suite (`tests/api/security-middleware.test.js`). Approved and committed on `phase-2-identity-and-sessions`. 9/9 test scenarios passing.
+  - **Task 2.3 — Session Middleware, CSRF Protection & Rate Limiting:** Implemented `requireUser` and `optionalUser` session middleware, Origin/Referer and double-submit cookie CSRF mitigation, route-level `authRateLimiter` and `apiRateLimiter` using `express-rate-limit`, and native HTTP integration test suite (`tests/api/security-middleware.test.js`). Approved and committed on `phase-2-identity-and-sessions` (commit `f3debef`). 9/9 test scenarios passing.
 - Actions taken:
   - Installed `express-rate-limit` dynamically via native `npm install express-rate-limit`.
   - Created `backend/src/infrastructure/http/middleware/requireUser.js` (`requireUser`, `optionalUser`, `protect`, `verifyToken`).

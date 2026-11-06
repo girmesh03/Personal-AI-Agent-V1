@@ -32,7 +32,7 @@
 | 17 | `backend/src/routes/index.js` | `backend/src/infrastructure/http/routes.js` | Master API v1 route mounting and module feature-flag enablement. | Implemented (Phase 1) |
 | 18 | `backend/src/routes/reportRoutes.js` | `backend/src/modules/operations/reports/http/reportRoutes.js` | Operational inspection report routes, checklist capture, export, and sharing. | Pending |
 | 19 | `backend/src/routes/sttRoutes.js` | `backend/src/modules/audio/http/speechRoutes.js` | Audio transcription routes using capability-qualified remote speech adapters. | Pending |
-| 20 | `backend/src/routes/userRoutes.js` | Split: `identity/http/profileRoutes.js`, `providers/http/providerRoutes.js` | User profile, preferences, and provider BYOK configuration routes. | Pending |
+| 20 | `backend/src/routes/userRoutes.js` | `backend/src/modules/identity/http/profileRoutes.js` (bridge: `backend/src/routes/userRoutes.js`) | User profile, preferences, and provider BYOK configuration routes. | Implemented (Phase 2, Task 2.4) |
 | 21 | `backend/src/services/documentGenerationService.js` | `backend/src/modules/documents/generation/documentGenerationService.js` | PDF (with Ethiopic fonts), DOCX, XLSX, CSV, Markdown, and JSON file generation. | Pending |
 | 22 | `backend/src/services/googleDriveService.js` | `backend/src/modules/connectors/googleDrive/googleDriveService.js` | Google Drive connector: OAuth state verification, file export, private sharing. | Pending |
 | 23 | `backend/src/services/storageService.js` | `backend/src/modules/assets/storage/storageService.js` | Private durable object storage service with checksum validation and signed URLs. | Pending |
@@ -54,7 +54,7 @@
 | 46 | `backend/src/controllers/dashboardController.js` | `backend/src/modules/dashboard/http/dashboardController.js` | Controller for aggregated dashboard data. | Pending |
 | 47 | `backend/src/controllers/reportController.js` | `backend/src/modules/operations/reports/http/reportController.js` | Controller for operational inspection reports and dossier exports. | Pending |
 | 48 | `backend/src/controllers/sttController.js` | `backend/src/modules/audio/http/speechController.js` | Controller for audio transcription requests. | Pending |
-| 49 | `backend/src/controllers/userController.js` | `backend/src/modules/identity/http/profileController.js` | Controller for user profile, settings, and BYOK credentials. | Pending |
+| 49 | `backend/src/controllers/userController.js` | `backend/src/modules/identity/http/profileController.js` (bridge: `backend/src/controllers/userController.js`) | Controller for user profile, settings, and BYOK credentials. | Implemented (Phase 2, Task 2.4) |
 | 50 | `backend/src/jobs/sweeper.js` | `backend/src/jobs/reconciliation/storageReconciliationJob.js` | Database-backed asset cleanup, outbox reconciliation, orphan file pruning. | Pending |
 | 51 | `backend/src/models/Audio.js` | Replaced by `modules/assets/persistence/Asset.js` | Unified asset model with audio representation subdocuments. | Pending |
 | 52 | `backend/src/models/Branch.js` | `backend/src/modules/operations/branches/persistence/Branch.js` | Branch schema and indices under operations module. | Pending |

@@ -156,3 +156,24 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
   - `authRateLimiter`: 30 requests per 15 minutes per IP on `/api/v1/auth/*` to prevent brute-force attacks.
   - `apiRateLimiter`: 300 requests per 15 minutes per IP on general `/api/v1/*`.
   - Automatically raises thresholds during test environments (`NODE_ENV === 'test'`) to avoid false-positive test suite throttling.
+
+## 13. Authenticated Credential Envelope Encryption (Task 2.4)
+- **Standard & Algorithm Compliance (NFR-SEC-002, Scenario U):**
+  - Implemented AES-256-GCM envelope encryption with unique 96-bit (12-byte) initialization vectors (IVs) per NIST SP 800-38D.
+  - KEK (Key Encryption Key) derived via HKDF-SHA256 from `CREDENTIAL_ENCRYPTION_KEY` (with fallback to `JWT_ACCESS_SECRET` in development/test), tagged with version identifier (`v1`).
+  - Ephemeral DEK (Data Encryption Key) generated freshly per credential, encrypted under KEK, and its plaintext memory securely wiped (`dek.fill(0)`) in a `finally` block immediately after use.
+  - Authenticated Additional Data (AAD) cryptographically binds the payload and DEK to `{ userId, credentialType, version, role }`, preventing ciphertext transposition or unauthorized cross-user replay.
+- **Key Rotation & Serialization:**
+  - `rotateCredentialEnvelope`: re-encrypts stored credentials under a new KEK version without decrypting to disk.
+  - `serializeEnvelope` / `deserializeEnvelope`: safe base64-encoded JSON representation suitable for database storage and retrieval.
+- **User Domain Model Integration (`modules/identity/domain/User.js`):**
+  - `setEncryptedApiKey`: automatically encrypts and serializes BYOK keys (`geminiApiKey`, `addisApiKey`), maintaining boolean presence flags.
+  - `getDecryptedApiKey`: decrypts keys strictly in volatile memory on demand during authorized requests.
+  - `getRedactedApiKey` / `redactCredential`: displays masked placeholders (e.g. `sk-a...7890`) for logs and UI display, returning `"Not Set"` when absent.
+  - `toJSON`: completely strips raw and encrypted key fields from client API responses, exposing only boolean status flags (`hasGeminiKey`, `hasAddisKey`).
+- **Profile & BYOK HTTP Routes:**
+  - `GET /api/v1/users/profile`: authenticated profile retrieval.
+  - `PATCH /api/v1/users/profile`: profile information update.
+  - `PATCH /api/v1/users/api-keys`: updates BYOK keys using envelope encryption; raw DB record stores only ciphertext.
+  - `GET /api/v1/users/api-keys`: returns masked key status without exposing plaintext secrets.
+  - Compatibility bridges established for `backend/src/controllers/userController.js` and `backend/src/routes/userRoutes.js`.

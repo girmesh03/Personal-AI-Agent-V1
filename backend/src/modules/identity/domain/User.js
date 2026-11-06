@@ -14,6 +14,12 @@ import {
   BCRYPT_SALT_ROUNDS,
   CHAT_CONSTANTS,
 } from '../../../utils/constants.js';
+import {
+  encryptCredential,
+  decryptCredential,
+  serializeEnvelope,
+  redactCredential,
+} from '../services/credentialEncryption.js';
 
 const userSchema = new mongoose.Schema(
   {
@@ -221,6 +227,65 @@ userSchema.pre('save', async function hashPasswordBeforeSave() {
 userSchema.methods.comparePassword = async function comparePassword(candidatePassword) {
   if (!this.password) return false;
   return bcrypt.compare(candidatePassword, this.password);
+};
+
+/**
+ * Sets an envelope-encrypted API key or clears it.
+ *
+ * @param {'geminiApiKey' | 'addisApiKey'} credentialType
+ * @param {string | null} plainKey
+ */
+userSchema.methods.setEncryptedApiKey = function setEncryptedApiKey(credentialType, plainKey) {
+  if (!this.settings) this.settings = {};
+  if (!this.settings.apiKeys) {
+    this.settings.apiKeys = {
+      hasGeminiKey: false,
+      hasAddisKey: false,
+      geminiApiKey: null,
+      addisApiKey: null,
+    };
+  }
+
+  const cleanKey = typeof plainKey === 'string' ? plainKey.trim() : null;
+  const flagName = credentialType === 'geminiApiKey' ? 'hasGeminiKey' : credentialType === 'addisApiKey' ? 'hasAddisKey' : null;
+
+  if (cleanKey) {
+    const envelope = encryptCredential(cleanKey, {
+      userId: this._id.toString(),
+      credentialType,
+    });
+    this.settings.apiKeys[credentialType] = serializeEnvelope(envelope);
+    if (flagName) this.settings.apiKeys[flagName] = true;
+  } else {
+    this.settings.apiKeys[credentialType] = null;
+    if (flagName) this.settings.apiKeys[flagName] = false;
+  }
+};
+
+/**
+ * Decrypts and retrieves an envelope-encrypted API key in volatile memory.
+ *
+ * @param {'geminiApiKey' | 'addisApiKey'} credentialType
+ * @returns {string | null} Plaintext API key or null if unset
+ */
+userSchema.methods.getDecryptedApiKey = function getDecryptedApiKey(credentialType) {
+  const serialized = this.settings?.apiKeys?.[credentialType];
+  if (!serialized) return null;
+  return decryptCredential(serialized, {
+    userId: this._id.toString(),
+    credentialType,
+  });
+};
+
+/**
+ * Retrieves a redacted string representation of an API key for safe user display.
+ *
+ * @param {'geminiApiKey' | 'addisApiKey'} credentialType
+ * @returns {string} Redacted key (e.g. "sk-a...7890") or "Not Set"
+ */
+userSchema.methods.getRedactedApiKey = function getRedactedApiKey(credentialType) {
+  const plain = this.getDecryptedApiKey(credentialType);
+  return redactCredential(plain);
 };
 
 export const User = mongoose.model('User', userSchema);

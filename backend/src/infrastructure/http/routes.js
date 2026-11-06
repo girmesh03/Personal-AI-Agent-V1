@@ -8,6 +8,7 @@ import { HTTP_STATUS } from '../../utils/constants.js';
 import { env } from '../../config/env.js';
 import { isDbConnected, getDbStatus } from '../database/connection.js';
 import authRoutes from '../../modules/identity/http/authRoutes.js';
+import profileRoutes from '../../modules/identity/http/profileRoutes.js';
 
 const router = Router();
 
@@ -31,5 +32,12 @@ router.get('/health', (_req, res) => {
  * Mounts: /api/v1/auth/*
  */
 router.use('/auth', authRoutes);
+
+/**
+ * User profile and BYOK credential routes.
+ * Mounts: /api/v1/users/* (with /api/v1/user fallback)
+ */
+router.use('/users', profileRoutes);
+router.use('/user', profileRoutes);
 
 export default router;

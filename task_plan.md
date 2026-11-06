@@ -6,7 +6,7 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
 Deliver a fully verified, production-grade Personal AI Agent V1 with provider-neutral LangChain/LangGraph architecture, single root package manifest, protected MUI theme, durable multimodal chat lifecycle, Postman-style backend API integration test suite, and complete functionality preservation across all 214 historical V0 source sections.
 
 ## Next Step
-Implement Task 2.4: Credential envelope encryption service for BYOK provider credentials (Node.js `aes-256-gcm`, key derivation, envelope encryption primitives, and user profile integration).
+Implement Task 2.5: Comprehensive identity and session API test suite, validating end-to-end user lifecycle, password hashing, session rotation, replay breach detection, requireUser/optionalUser middleware, CSRF double-submit validation, rate limiting headers, and encrypted BYOK API key storage.
 
 ## Current Phase
 Phase 2: Identity, Sessions, and Account Security - in_progress
@@ -41,9 +41,8 @@ Phase 2: Identity, Sessions, and Account Security - in_progress
 ### Phase 2: Identity, Sessions, and Account Security
 - [x] Task 2.1: Database connection lifecycle, schema options, User, AuthIdentity, and Session models with secure refresh token rotation (Committed - f6a5a2a)
 - [x] Task 2.2: Email/password authentication, password hashing, and Google OAuth 2.0 with signed state validation (Committed - 4dfeb59)
-- [x] Task 2.3: Session middleware (`requireUser`), CSRF protection, and rate limiting (Committed)
-- [/] Task 2.4: Credential envelope encryption service for BYOK provider credentials (In Progress)
-- [ ] Task 2.4: Credential envelope encryption service for BYOK provider credentials
+- [x] Task 2.3: Session middleware (`requireUser`), CSRF protection, and rate limiting (Committed - f3debef)
+- [x] Task 2.4: Credential envelope encryption service for BYOK provider credentials (Completed & Verified)
 - [ ] Task 2.5: Identity and session API tests
 - [ ] Phase 2 Gate & Owner Merge Review
 - **Status:** in_progress

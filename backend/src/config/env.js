@@ -92,6 +92,8 @@ const envSchema = z.object({
   TELEGRAM_MANAGEMENT_CHAT_ID: z.string().optional().default(''),
   TELEGRAM_MAINTENANCE_CHAT_ID: z.string().optional().default(''),
   TELEGRAM_GENERAL_CHAT_ID: z.string().optional().default(''),
+
+  CREDENTIAL_ENCRYPTION_KEY: z.string().optional().default(''),
 });
 
 // Resolve aliases and fallbacks
@@ -121,6 +123,7 @@ const rawConfig = {
   TELEGRAM_MANAGEMENT_CHAT_ID: process.env.TELEGRAM_MANAGEMENT_CHAT_ID,
   TELEGRAM_MAINTENANCE_CHAT_ID: process.env.TELEGRAM_MAINTENANCE_CHAT_ID,
   TELEGRAM_GENERAL_CHAT_ID: process.env.TELEGRAM_GENERAL_CHAT_ID,
+  CREDENTIAL_ENCRYPTION_KEY: process.env.CREDENTIAL_ENCRYPTION_KEY,
 };
 
 const parsedResult = envSchema.safeParse(rawConfig);
