@@ -47,10 +47,26 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
 ### Phase 2: Identity, Sessions, and Account Security
 - **Status:** in_progress
 - **Branch:** `phase-2-identity-and-sessions` (branched from `main` at `6c4b80d`)
-- **Current Task:** Task 2.3 — Session Middleware (`requireUser`), CSRF Protection, and Rate Limiting (In Progress)
+- **Current Task:** Task 2.4 — Credential Envelope Encryption Service for BYOK Provider Credentials (In Progress)
 - **Completed Tasks:**
   - **Task 2.1 — Database Connection & Identity/Session Models:** Implemented MongoDB lifecycle engine, base schema options, User domain model with bcrypt password hashing, Session registry with token rotation and breach detection, AuthIdentity model, and integration test suite (`tests/api/identity-models.test.js`). Approved and committed on `phase-2-identity-and-sessions` (commit `f6a5a2a`).
-  - **Task 2.2 — Authentication Service, Controllers, and Google OAuth 2.0:** Implemented token service, Zod request validation middleware, auth schemas, name derivation, Google OAuth 2.0 with HMAC signed state parameter, auth service, auth controller, auth routes, and native HTTP integration test suite (`tests/api/auth.test.js`). Approved and committed on `phase-2-identity-and-sessions`. 12/12 test scenarios passing.
+  - **Task 2.2 — Authentication Service, Controllers, and Google OAuth 2.0:** Implemented token service, Zod request validation middleware, auth schemas, name derivation, Google OAuth 2.0 with HMAC signed state parameter, auth service, auth controller, auth routes, and native HTTP integration test suite (`tests/api/auth.test.js`). Approved and committed on `phase-2-identity-and-sessions` (commit `4dfeb59`).
+  - **Task 2.3 — Session Middleware, CSRF Protection & Rate Limiting:** Implemented `requireUser` and `optionalUser` session middleware, Origin/Referer and double-submit cookie CSRF mitigation, route-level `authRateLimiter` and `apiRateLimiter` using `express-rate-limit`, and native HTTP integration test suite (`tests/api/security-middleware.test.js`). Approved and committed on `phase-2-identity-and-sessions`. 9/9 test scenarios passing.
+- Actions taken:
+  - Installed `express-rate-limit` dynamically via native `npm install express-rate-limit`.
+  - Created `backend/src/infrastructure/http/middleware/requireUser.js` (`requireUser`, `optionalUser`, `protect`, `verifyToken`).
+  - Created `backend/src/middleware/authMiddleware.js` compatibility bridge.
+  - Created `backend/src/infrastructure/http/middleware/csrfProtection.js` (`csrfProtection`, `setCsrfCookie`, `generateCsrfToken`).
+  - Created `backend/src/infrastructure/http/middleware/rateLimiter.js` (`authRateLimiter`, `apiRateLimiter`).
+  - Protected `GET /api/v1/auth/me` with `requireUser`.
+  - Protected `/api/v1/auth/*` with `authRateLimiter`.
+  - Mounted `apiRateLimiter` and `csrfProtection` on `/api/v1` in `backend/src/app.js`.
+  - Normalized CORS rejected origins to 403 `ForbiddenError` (`CORS_ORIGIN_BLOCKED`).
+  - Created `tests/api/security-middleware.test.js` exercising 9 test cases.
+  - Executed `npm run test:api` -> 34/34 tests passed across 4 test suites (`health.test.js`, `identity-models.test.js`, `auth.test.js`, `security-middleware.test.js`).
+  - Executed `npm run verify` -> 0 errors, 1513 modules bundled in 4.78s.
+  - Executed `npm run clean:client` -> clean working tree.
+  - Updated `docs/implementation/source-disposition.md` (Row 8 marked Implemented).
 - Actions taken:
   - Created `backend/src/infrastructure/security/tokenService.js` and compatibility bridge `backend/src/utils/token.js`.
   - Created `backend/src/infrastructure/http/middleware/validate.js` and compatibility bridge `backend/src/middleware/validate.js`.

@@ -20,7 +20,7 @@
 | 5 | `backend/src/config/logger.js` | `backend/src/config/logger.js` | Structured Winston logging, request correlation IDs, secret/prompt redaction; no plaintext credentials. | Implemented (Phase 1) |
 | 6 | `backend/src/config/schemaOptions.js` | `backend/src/infrastructure/database/schemaOptions.js` | Shared serialization options (virtuals, getters, timestamps); safe projection rules. | Implemented (Phase 2) |
 | 7 | `backend/src/errors/CustomError.js` | `backend/src/shared/errors/AppError.js` | Typed application errors, normalized public HTTP error codes, security-safe error sanitization. | Implemented (Phase 1) |
-| 8 | `backend/src/middleware/authMiddleware.js` | `backend/src/infrastructure/http/middleware/requireUser.js` | Server-derived user identity, session validation, cookie parsing; reject client owner claims. | Pending |
+| 8 | `backend/src/middleware/authMiddleware.js` | `backend/src/infrastructure/http/middleware/requireUser.js` | Server-derived user identity, session validation, cookie parsing; reject client owner claims. | Implemented (Phase 2, Task 2.3) |
 | 9 | `backend/src/middleware/errorHandler.js` | `backend/src/infrastructure/http/middleware/errorHandler.js` | Central error mapping, request correlation, safe client-facing errors without stack traces. | Implemented (Phase 1) |
 | 10 | `backend/src/middleware/notFoundHandler.js` | `backend/src/infrastructure/http/middleware/notFoundHandler.js` | Consistent API 404 handler, enumeration prevention. | Implemented (Phase 1) |
 | 11 | `backend/src/middleware/uploadMiddleware.js` | `backend/src/modules/assets/http/uploadMiddleware.js` | Streaming multipart parser, MIME magic byte sniffing, file size bounds, safe temp paths. | Pending |

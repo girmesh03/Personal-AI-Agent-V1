@@ -136,3 +136,23 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
   - Login creates new session with fresh UUID `family`.
   - Refresh rotates token within the same family.
   - Replay of revoked tokens immediately terminates the entire lineage with `TOKEN_REUSE_DETECTED`.
+
+## 12. Session Middleware, CSRF Protection, and Rate Limiting (Task 2.3)
+- **Server-Derived Identity Invariant (`infrastructure/http/middleware/requireUser.js`):**
+  - Resolves identity strictly from verified JWT access tokens (via HttpOnly cookies or Bearer header).
+  - Client-supplied `userId`, query params, or body claims are never trusted for authorization.
+  - Attaches verified User model, `req.userId`, and frozen `req.auth = { userId, email }`.
+  - Provides `optionalUser` middleware for optional-authentication routes.
+- **CSRF Mitigation Architecture (`infrastructure/http/middleware/csrfProtection.js`):**
+  - Defends against ambient cookie credential exploitation on state-changing methods (`POST`, `PUT`, `PATCH`, `DELETE`).
+  - Safe methods (`GET`, `HEAD`, `OPTIONS`) and public onboarding endpoints are exempted.
+  - Requests carrying explicit Bearer authorization headers are exempted (browsers do not attach Bearer headers automatically cross-origin).
+  - For cookie-authenticated requests, enforces strict `Origin` and `Referer` validation against allowed origins (`CLIENT_ORIGIN`, localhost dev ports, and production `*.vercel.app`).
+  - Supports double-submit CSRF cookie/header matching (`X-CSRF-Token`).
+- **CORS Error Normalization (`app.js`):**
+  - Cross-origin requests from disallowed origins are cleanly intercepted and thrown as `ForbiddenError` (403 `CORS_ORIGIN_BLOCKED`) rather than generic 500 exceptions.
+- **Rate Limiting Engine (`infrastructure/http/middleware/rateLimiter.js`):**
+  - Powered by `express-rate-limit`.
+  - `authRateLimiter`: 30 requests per 15 minutes per IP on `/api/v1/auth/*` to prevent brute-force attacks.
+  - `apiRateLimiter`: 300 requests per 15 minutes per IP on general `/api/v1/*`.
+  - Automatically raises thresholds during test environments (`NODE_ENV === 'test'`) to avoid false-positive test suite throttling.

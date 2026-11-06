@@ -12,7 +12,10 @@ import { env } from './config/env.js';
 import { logStream } from './config/logger.js';
 import { notFoundHandler } from './infrastructure/http/middleware/notFoundHandler.js';
 import { errorHandler } from './infrastructure/http/middleware/errorHandler.js';
+import { csrfProtection } from './infrastructure/http/middleware/csrfProtection.js';
+import { apiRateLimiter } from './infrastructure/http/middleware/rateLimiter.js';
 import { HTTP_STATUS } from './utils/constants.js';
+import { ForbiddenError } from './shared/errors/AppError.js';
 import { isDbConnected, getDbStatus } from './infrastructure/database/connection.js';
 import apiV1Routes from './infrastructure/http/routes.js';
 
@@ -44,10 +47,10 @@ app.use(
         ) {
           callback(null, true);
         } else {
-          callback(new Error(`CORS blocked for origin: ${origin}`));
+          callback(new ForbiddenError(`CORS blocked for origin: ${origin}`, 'CORS_ORIGIN_BLOCKED'));
         }
       } catch {
-        callback(new Error(`CORS error parsing origin: ${origin}`));
+        callback(new ForbiddenError(`CORS error parsing origin: ${origin}`, 'CORS_INVALID_ORIGIN'));
       }
     },
     credentials: true,
@@ -87,13 +90,17 @@ app.get(['/health', '/api/health', '/api/v1/health'], (_req, res) => {
 // NOTE: Public static upload serving (`express.static('/uploads')`) is strictly PROHIBITED in V1.
 // All asset access must pass through authenticated, owner-scoped download routes.
 
-// 8. API v1 Router Mount
+// 8. General API rate limiter & CSRF protection
+app.use('/api/v1', apiRateLimiter);
+app.use('/api/v1', csrfProtection);
+
+// 9. API v1 Router Mount
 app.use('/api/v1', apiV1Routes);
 
-// 9. Unmatched Route Handler (404)
+// 10. Unmatched Route Handler (404)
 app.use(notFoundHandler);
 
-// 10. Global Error Handler (4-argument signature)
+// 11. Global Error Handler (4-argument signature)
 app.use(errorHandler);
 
 export default app;

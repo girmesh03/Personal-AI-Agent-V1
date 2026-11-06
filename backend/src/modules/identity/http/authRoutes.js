@@ -23,8 +23,13 @@ import {
   loginBodySchema,
 } from './authSchemas.js';
 import { validate } from '../../../infrastructure/http/middleware/validate.js';
+import { requireUser } from '../../../infrastructure/http/middleware/requireUser.js';
+import { authRateLimiter } from '../../../infrastructure/http/middleware/rateLimiter.js';
 
 const router = express.Router();
+
+// Apply auth rate limiting to all auth endpoints
+router.use(authRateLimiter);
 
 /**
  * @route POST /api/v1/auth/register
@@ -59,7 +64,7 @@ router.post('/logout', logout);
  * @desc Retrieve current authenticated user profile.
  * @access Protected
  */
-router.get('/me', getMe);
+router.get('/me', requireUser, getMe);
 
 /**
  * @route GET /api/v1/auth/google/sso
