@@ -136,6 +136,15 @@ const assetSchema = new mongoose.Schema(
         default: () => ({}),
       },
     },
+    hasBinaryPurged: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+    binaryPurgedAt: {
+      type: Date,
+      default: null,
+    },
     isArchived: {
       type: Boolean,
       default: false,
@@ -220,13 +229,50 @@ assetSchema.virtual('sttEngine').get(function () {
 });
 
 /**
- * Soft deletes the asset.
+ * Soft deletes the asset and cascades to its derived representations.
  */
 assetSchema.methods.softDelete = async function softDelete() {
   this.isDeleted = true;
   this.deletedAt = new Date();
   this.status = 'deleted';
-  return this.save();
+  await this.save();
+
+  // Cascade soft delete to associated derived representations
+  try {
+    if (mongoose.models.AssetRepresentation) {
+      await mongoose.models.AssetRepresentation.updateMany(
+        { sourceAssetId: this._id, isDeleted: false },
+        { isDeleted: true, deletedAt: new Date() }
+      );
+    }
+  } catch (_e) {
+    // Non-fatal if representation model not loaded yet
+  }
+
+  return this;
+};
+
+/**
+ * Reconciles binary purge: marks the asset binary as purged while retaining
+ * metadata and derived representations for ongoing conversational reasoning (FR-CORE-DOC-003, Scenario M).
+ */
+assetSchema.methods.purgeBinary = async function purgeBinary() {
+  this.hasBinaryPurged = true;
+  this.binaryPurgedAt = new Date();
+  await this.save();
+
+  try {
+    if (mongoose.models.AssetRepresentation) {
+      await mongoose.models.AssetRepresentation.updateMany(
+        { sourceAssetId: this._id, isDeleted: false },
+        { isBinaryPurged: true }
+      );
+    }
+  } catch (_e) {
+    // Non-fatal if representation model not loaded yet
+  }
+
+  return this;
 };
 
 /**

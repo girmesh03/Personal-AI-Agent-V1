@@ -58,7 +58,7 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
 ### Phase 3: Private Asset and Document Foundation
 - **Status:** in_progress
 - **Branch:** `phase-3-assets-and-documents` (branched from `main` at `1f94414`)
-- **Current Task:** Task 3.4 — Asset Representation and Provenance Models
+- **Current Task:** Task 3.5 — Private Signed Download and Asset Lifecycle Reconciliation
 - **Completed Tasks:**
   - **Task 3.1 — Private Object Storage Abstraction & Unified Asset Model:**
     - Defined `ASSET_CONSTANTS` in `backend/src/utils/constants.js`.
@@ -76,6 +76,13 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
     - Enforced `DOCUMENT_PARSING_LIMITS` (500k max chars, 1,000 char preview, 5k spreadsheet rows, 50 cols) preventing DoS.
     - Integrated with `assetService.extractAssetContent` and `POST /api/v1/assets/:id/extract`.
     - Verified with 12/12 tests passing in `tests/api/document-parser.test.js`.
+  - **Task 3.4 — Asset Representation and Provenance Models:**
+    - Implemented first-class `AssetRepresentation` model (`modules/assets/persistence/AssetRepresentation.js`, domain alias, and model bridge) recording derived content alongside full processing provenance (`pipeline`, `engine`, `engineVersion`, `sourceChecksum`, `durationMs`, `pageRange`, `sheetNames`, `metadata`).
+    - Implemented atomic `upsertRepresentation` with automatic SHA-256 content checksum calculation.
+    - Implemented Scenario M physical binary purge (`purgeAssetBinary` / `POST /api/v1/assets/:id/purge-binary`): deletes physical binary from disk, marks `hasBinaryPurged: true`, and updates representations with `isBinaryPurged: true` while keeping derived text intact for conversational reasoning.
+    - Implemented durable citation and grounding service (`modules/documents/provenance/citationService.js`): generates immutable citations binding to source checksum, location, and snippet with verification (`POST /api/v1/assets/:id/citations`).
+    - Implemented representation endpoints (`GET /api/v1/assets/:id/representations`, `GET /api/v1/assets/:id/representations/:type`) and cascading soft-deletion.
+    - Verified with 7/7 tests passing in `tests/api/asset-provenance.test.js`.
   - **Full Codebase Consistency Audit & Performance Engineering:**
     - Audited every single backend, route, model, controller, middleware, and test file line by line.
     - Standardized all controllers (`authController`, `profileController`, `assetController`) with `asyncHandler`.
@@ -83,7 +90,7 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
     - Added missing bridges: `controllers/assetController.js`, `routes/assetRoutes.js`, `services/assetService.js`, and directory aliases `modules/identity/persistence/` and `modules/assets/domain/`.
     - Fixed `Session.deleteMany({ userId })` field invariant.
     - Removed redundant route-level CSRF in `assetRoutes.js`.
-    - Added granular test scripts to `package.json` and optimized test execution via `--import ./tests/setup.js` (104/104 tests passing in 73s).
+    - Added granular test scripts to `package.json` and optimized test execution via `--import ./tests/setup.js` (111/111 tests passing in 87s).
 - **Completed Tasks:**
   - **Task 2.1 — Database Connection & Identity/Session Models:** Implemented MongoDB lifecycle engine, base schema options, User domain model with bcrypt password hashing, Session registry with token rotation and breach detection, AuthIdentity model, and integration test suite (`tests/api/identity-models.test.js`). Approved and committed on `phase-2-identity-and-sessions` (commit `f6a5a2a`).
   - **Task 2.2 — Authentication Service, Controllers, and Google OAuth 2.0:** Implemented token service, Zod request validation middleware, auth schemas, name derivation, Google OAuth 2.0 with HMAC signed state parameter, auth service, auth controller, auth routes, and native HTTP integration test suite (`tests/api/auth.test.js`). Approved and committed on `phase-2-identity-and-sessions` (commit `4dfeb59`).
@@ -253,7 +260,8 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
 | Storage & Asset Models | `npm run test:storage` | 15 passed | 15/15 passed in 19.5s | PASS |
 | Multipart Upload Pipeline | `npm run test:upload` | 20 passed | 20/20 passed in 24.8s | PASS |
 | Document Parser Tests | `npm run test:parser` | 12 passed | 12/12 passed in 16.9s | PASS |
-| Full API Test Suite | `npm run test:api` | 104 passed | 104/104 passed in 73.6s | PASS |
+| Asset Provenance Tests | `npm run test:provenance` | 7 passed | 7/7 passed in 40.2s | PASS |
+| Full API Test Suite | `npm run test:api` | 111 passed | 111/111 passed in 87.4s | PASS |
 | Quality Verification | `npm run verify` | Lint & Build pass | 0 lint errors, 1,513 client modules built | PASS |
 | Client Dist Cleanup | `npm run clean:client` | Clean client/dist/ | Clean working tree | PASS |
 
@@ -264,12 +272,14 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
 | 2026-11-06T20:20 | Session.deleteMany({ user: userId }) silent mismatch | 1 | Fixed query to { userId: userId } matching Session schema field name |
 | 2026-11-06T20:25 | server.js direct startup missing connectDB | 1 | Added await connectDB() to startServer and disconnectDB to handleShutdown |
 | 2026-11-06T20:28 | Mongoose CastError on representations.preview | 1 | Changed representations.preview to mongoose.Schema.Types.Mixed in Asset.js |
+| 2026-11-06T21:00 | Engine mapping for markdown document returned generic-parser | 1 | Added 'markdown': 'plain-text' to engineMap in assetService.js |
+| 2026-11-06T21:01 | getAssetById returned soft-deleted asset | 1 | Added isDeleted: false default filter to getAssetById in assetService.js |
 
 ## 5-Question Reboot Check
 | Question | Answer |
 |----------|--------|
-| Where am I? | Phase 3: Private Asset and Document Foundation, Task 3.3 and Codebase Consistency Audit Complete & Verified |
-| Where am I going? | Task 3.4: Asset representation and provenance models |
+| Where am I? | Phase 3: Private Asset and Document Foundation, Task 3.4 Complete & Verified |
+| Where am I going? | Task 3.5: Private signed download and asset lifecycle reconciliation |
 | What's the goal? | Implement Personal AI Agent V1 (Operon) per master specification with full functionality preservation, correct architecture, and owner review gates |
-| What have I learned? | Granular test runners and test env preloading via tests/setup.js speed up bcrypt hashing 130x without compromising security in production. Uniform asyncHandler eliminates controller boilerplate. 104/104 tests passing across 9 suites. |
-| What have I done? | Completed Task 3.3 (documentParser.js, extractAssetContent, document-parser.test.js), conducted full line-by-line audit across all codebase files, resolved inconsistencies (asyncHandler, server lifecycle, bridges, session query, CSRF deduplication), added granular test scripts, verified 104/104 tests and client build. |
+| What have I learned? | Derived representations must maintain cryptographic binding to raw asset checksum. Binary purge allows temporary binary reclamation without losing conversational context (Scenario M). 111/111 tests passing across 10 suites. |
+| What have I done? | Implemented Task 3.4: AssetRepresentation model, citationService.js, purgeAssetBinary, citation generation, representation endpoints, cascading soft delete, asset-provenance.test.js (7/7 passed), 111/111 full regression suite passing, verify passing. |

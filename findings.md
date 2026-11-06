@@ -278,3 +278,32 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
     - Reduced bcrypt salt rounds to 4 during test runs, accelerating user hashing from 2,476ms to 19ms (130x speedup).
     - Added 11 granular test scripts to `package.json` (`test:health`, `test:identity-models`, `test:auth`, `test:security`, `test:crypto`, `test:identity-suite`, `test:storage`, `test:upload`, `test:parser`, `test:file`, `test:single`) while preserving `test:api`.
     - 104/104 tests passing across all 9 test suites in 73 seconds.
+
+## 19. Asset Representation & Provenance Models (Task 3.4)
+- **First-Class Representation Model (`modules/assets/persistence/AssetRepresentation.js`):**
+  - Satisfies `FR-CORE-DOC-003` and Section 10.1 (Row 722): *"OCR/text/transcript/table extraction/chunk derivative, processor/provider version, source asset, page/section/time ranges, provenance."*
+  - Automatically computes SHA-256 checksum and sizeBytes on pre-save hook for content tamper detection.
+  - Implements atomic `upsertRepresentation` with modern `returnDocument: 'after'`.
+  - Captures complete provenance:
+    - Pipeline name (e.g. `'documentParser'`, `'spreadsheetTableParser'`, `'speechToText'`).
+    - Engine identifier and version (e.g. `pdf-parse`, `mammoth`, `exceljs`, `plain-text`).
+    - Cryptographic source asset checksum (`sourceChecksum`) binding derived content to the exact binary.
+    - Page ranges (`startPage`, `endPage`, `totalPages`), sheet names, duration latency, and format metadata.
+- **Physical Binary Purge & Representation Retention (Scenario M & `FR-CORE-DOC-003`):**
+  - Addresses Scenario M: *"When the temporary upload buffer reaches retention expiry, background maintenance safely purges the binary file from disk while retaining the derived transcript/text representation for ongoing conversational reasoning."*
+  - Implemented `purgeAssetBinary(assetId, userId)`:
+    - Deletes physical file from private object storage.
+    - Sets `hasBinaryPurged: true` and `binaryPurgedAt` on `Asset`.
+    - Updates child representations with `isBinaryPurged: true`.
+    - Keeps `Asset` metadata and `AssetRepresentation` content completely intact for AI context and conversational reasoning.
+- **Durable Citation & Grounding Service (`modules/documents/provenance/citationService.js`):**
+  - Creates immutable citations binding conversational assertions to source asset, representation, location (page, sheet, row, lineStart/lineEnd, timeOffsetSeconds), and snippet.
+  - Implements `verifyCitationIntegrity(citation, asset)` ensuring citation checksum matches the authoritative asset checksum.
+  - Formats human-readable citation labels for UI display (e.g., `Document.pdf (p. 3)`).
+- **HTTP Endpoints & Data Isolation (`NFR-SEC-004`):**
+  - `GET /api/v1/assets/:id/representations`: Returns all representations with provenance.
+  - `GET /api/v1/assets/:id/representations/:type`: Returns specific representation.
+  - `POST /api/v1/assets/:id/purge-binary`: Purges physical storage file while keeping representations intact.
+  - `POST /api/v1/assets/:id/citations`: Creates an immutable citation.
+  - All endpoints enforce strict user isolation: foreign or unauthorized requests receive uniform 404 `NOT_FOUND`.
+  - Cascading soft-delete: deleting an asset marks both the `Asset` and all its `AssetRepresentation` documents as `isDeleted: true`.

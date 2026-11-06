@@ -5,9 +5,11 @@
 
 import fs from 'node:fs';
 import { Asset } from '../persistence/Asset.js';
+import { AssetRepresentation } from '../persistence/AssetRepresentation.js';
 import * as storageService from '../storage/storageService.js';
 import { assertUserOwnership, buildOwnerQuery } from '../../../infrastructure/security/userIsolation.js';
 import { parseDocument } from '../../documents/ingestion/documentParser.js';
+import { createCitation } from '../../documents/provenance/citationService.js';
 import { BadRequestError, NotFoundError } from '../../../shared/errors/AppError.js';
 import { ASSET_CONSTANTS } from '../../../utils/constants.js';
 import { logger } from '../../../config/logger.js';
@@ -151,8 +153,12 @@ export const createAssetsFromUploads = async ({
  * @param {string | import('mongoose').Types.ObjectId} userId
  * @returns {Promise<import('mongoose').HydratedDocument<any>>}
  */
-export const getAssetById = async (assetId, userId) => {
-  const asset = await Asset.findById(assetId);
+export const getAssetById = async (assetId, userId, options = {}) => {
+  const query = { _id: assetId };
+  if (!options.includeDeleted) {
+    query.isDeleted = false;
+  }
+  const asset = await Asset.findOne(query);
   return assertUserOwnership(asset, userId, 'owner');
 };
 
@@ -248,6 +254,191 @@ export const extractAssetContent = async (assetId, userId, options = {}) => {
   };
 
   await asset.save();
-  logger.info(`[assetService] Document text extracted: assetId=${asset._id}, format=${parsed.format}, chars=${parsed.charCount}`);
+
+  // Determine extraction engine identifier
+  const engineMap = {
+    pdf: 'pdf-parse',
+    docx: 'mammoth',
+    xlsx: 'exceljs',
+    xls: 'exceljs',
+    csv: 'exceljs',
+    txt: 'plain-text',
+    md: 'plain-text',
+    markdown: 'plain-text',
+    json: 'json-parser',
+  };
+  const engine = engineMap[parsed.format] || 'generic-parser';
+
+  const baseProvenance = {
+    pipeline: 'documentParser',
+    engine,
+    engineVersion: '1.0.0',
+    sourceChecksum: asset.sha256,
+    processedAt: new Date(),
+    durationMs: parsed.durationMs || 0,
+    isTruncated: Boolean(parsed.isTruncated),
+    pageRange: parsed.pageCount
+      ? { startPage: 1, endPage: parsed.pageCount, totalPages: parsed.pageCount }
+      : { startPage: null, endPage: null, totalPages: null },
+    sheetNames: parsed.sheetNames || [],
+    metadata: {
+      charCount: parsed.charCount,
+      wordCount: parsed.wordCount,
+      lineCount: parsed.lineCount,
+      sheetCount: parsed.sheetCount,
+      isScanned: Boolean(parsed.isScanned),
+    },
+  };
+
+  // 1. Create primary extracted_text representation
+  await AssetRepresentation.upsertRepresentation({
+    owner: asset.owner,
+    sourceAssetId: asset._id,
+    representationType: 'extracted_text',
+    content: parsed.text || '',
+    mimeType: 'text/plain',
+    provenance: baseProvenance,
+    retentionRule: 'retain_after_binary_purge',
+    status: 'ready',
+  });
+
+  // 2. If spreadsheet, also create structured spreadsheet_table representation
+  if (parsed.format === 'xlsx' || parsed.format === 'xls' || parsed.format === 'csv') {
+    await AssetRepresentation.upsertRepresentation({
+      owner: asset.owner,
+      sourceAssetId: asset._id,
+      representationType: 'spreadsheet_table',
+      content: parsed.preview || parsed.text,
+      mimeType: 'text/markdown',
+      provenance: {
+        ...baseProvenance,
+        pipeline: 'spreadsheetTableParser',
+      },
+      retentionRule: 'retain_after_binary_purge',
+      status: 'ready',
+    });
+  }
+
+  // 3. Create text_preview representation
+  if (parsed.preview) {
+    await AssetRepresentation.upsertRepresentation({
+      owner: asset.owner,
+      sourceAssetId: asset._id,
+      representationType: 'text_preview',
+      content: parsed.preview,
+      mimeType: 'text/plain',
+      provenance: {
+        ...baseProvenance,
+        pipeline: 'textSnippetPreview',
+      },
+      retentionRule: 'retain_after_binary_purge',
+      status: 'ready',
+    });
+  }
+
+  logger.info(
+    `[assetService] Document text extracted and representations persisted: assetId=${asset._id}, format=${parsed.format}, chars=${parsed.charCount}`
+  );
   return asset;
+};
+
+/**
+ * Retrieves all active derived representations for an asset with strict owner isolation.
+ *
+ * @param {string} assetId
+ * @param {string | import('mongoose').Types.ObjectId} userId
+ * @returns {Promise<Array<import('../persistence/AssetRepresentation.js').AssetRepresentation>>}
+ */
+export const getAssetRepresentations = async (assetId, userId) => {
+  const asset = await getAssetById(assetId, userId);
+  return AssetRepresentation.find({
+    sourceAssetId: asset._id,
+    owner: asset.owner,
+    isDeleted: false,
+  }).sort({ createdAt: 1 });
+};
+
+/**
+ * Retrieves a specific representation for an asset by type with owner isolation.
+ *
+ * @param {string} assetId
+ * @param {string} representationType
+ * @param {string | import('mongoose').Types.ObjectId} userId
+ * @returns {Promise<import('../persistence/AssetRepresentation.js').AssetRepresentation>}
+ */
+export const getAssetRepresentationByType = async (assetId, representationType, userId) => {
+  const asset = await getAssetById(assetId, userId);
+  const rep = await AssetRepresentation.findOne({
+    sourceAssetId: asset._id,
+    owner: asset.owner,
+    representationType,
+    isDeleted: false,
+  });
+
+  if (!rep) {
+    throw new NotFoundError(
+      `Representation of type "${representationType}" not found for asset ${assetId}.`,
+      'REPRESENTATION_NOT_FOUND'
+    );
+  }
+
+  return rep;
+};
+
+/**
+ * Reconciles physical binary file purge while retaining Asset metadata and derived
+ * representations for ongoing conversational reasoning (Scenario M, FR-CORE-DOC-003).
+ *
+ * @param {string} assetId
+ * @param {string | import('mongoose').Types.ObjectId} userId
+ * @returns {Promise<import('../persistence/Asset.js').Asset>}
+ */
+export const purgeAssetBinary = async (assetId, userId) => {
+  const asset = await getAssetById(assetId, userId);
+
+  // If binary is already purged, return existing state
+  if (asset.hasBinaryPurged) {
+    return asset;
+  }
+
+  // Delete physical storage file if present
+  try {
+    await storageService.deleteFile(asset.storageKey);
+  } catch (err) {
+    logger.warn(`[assetService] Storage deletion during binary purge: ${err.message}`);
+  }
+
+  // Update asset and representations
+  await asset.purgeBinary();
+  logger.info(`[assetService] Asset binary purged, representations retained: assetId=${asset._id}`);
+  return asset;
+};
+
+/**
+ * Generates an immutable, verified citation for an asset and its derived representation.
+ *
+ * @param {string} assetId
+ * @param {string | import('mongoose').Types.ObjectId} userId
+ * @param {object} citationParams
+ * @returns {Promise<object>} Citation object
+ */
+export const generateAssetCitation = async (assetId, userId, { representationType, location = {}, snippet = '' } = {}) => {
+  const asset = await getAssetById(assetId, userId);
+  let representation = null;
+
+  if (representationType) {
+    representation = await AssetRepresentation.findOne({
+      sourceAssetId: asset._id,
+      owner: asset.owner,
+      representationType,
+      isDeleted: false,
+    });
+  }
+
+  return createCitation({
+    asset,
+    representation,
+    location,
+    snippet,
+  });
 };

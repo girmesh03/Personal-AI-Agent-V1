@@ -38,6 +38,30 @@ router.get('/:id', assetController.getAsset);
 router.post('/:id/extract', assetController.extractAssetContent);
 
 /**
+ * @route GET /api/v1/assets/:id/representations
+ * @desc Get all derived representations for an asset with full provenance
+ */
+router.get('/:id/representations', assetController.getAssetRepresentations);
+
+/**
+ * @route GET /api/v1/assets/:id/representations/:type
+ * @desc Get a specific representation for an asset by type
+ */
+router.get('/:id/representations/:type', assetController.getAssetRepresentationByType);
+
+/**
+ * @route POST /api/v1/assets/:id/purge-binary
+ * @desc Purge physical binary from storage while retaining representations (Scenario M)
+ */
+router.post('/:id/purge-binary', assetController.purgeAssetBinary);
+
+/**
+ * @route POST /api/v1/assets/:id/citations
+ * @desc Generate an immutable, verified citation for an asset
+ */
+router.post('/:id/citations', assetController.createAssetCitation);
+
+/**
  * @route DELETE /api/v1/assets/:id
  * @desc Soft delete an asset
  */

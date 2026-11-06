@@ -28,6 +28,7 @@
     "test:storage": "node --import ./tests/setup.js --test tests/api/storage-asset.test.js",
     "test:upload": "node --import ./tests/setup.js --test tests/api/asset-upload.test.js",
     "test:parser": "node --import ./tests/setup.js --test tests/api/document-parser.test.js",
+    "test:provenance": "node --import ./tests/setup.js --test tests/api/asset-provenance.test.js",
     "verify": "npm run lint && npm run build:web"
   },
   "devDependencies": {

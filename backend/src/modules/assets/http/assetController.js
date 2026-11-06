@@ -26,6 +26,8 @@ export const formatAssetResponse = (asset) => ({
   retentionPolicy: asset.retentionPolicy,
   sha256: asset.sha256,
   expiresAt: asset.expiresAt,
+  hasBinaryPurged: Boolean(asset.hasBinaryPurged),
+  binaryPurgedAt: asset.binaryPurgedAt || null,
   representations: asset.representations || {},
   createdAt: asset.createdAt,
   updatedAt: asset.updatedAt,
@@ -153,6 +155,77 @@ export const extractAssetContent = asyncHandler(async (req, res) => {
     data: {
       asset: formatAssetResponse(asset),
       extraction: asset.representations,
+    },
+  });
+});
+
+/**
+ * Retrieves all derived representations for an asset with full provenance.
+ * Route: GET /api/v1/assets/:id/representations
+ */
+export const getAssetRepresentations = asyncHandler(async (req, res) => {
+  const representations = await assetService.getAssetRepresentations(req.params.id, req.user._id);
+
+  return res.status(HTTP_STATUS.OK).json({
+    success: true,
+    data: {
+      representations,
+    },
+  });
+});
+
+/**
+ * Retrieves a specific representation by type with full provenance.
+ * Route: GET /api/v1/assets/:id/representations/:type
+ */
+export const getAssetRepresentationByType = asyncHandler(async (req, res) => {
+  const representation = await assetService.getAssetRepresentationByType(
+    req.params.id,
+    req.params.type,
+    req.user._id
+  );
+
+  return res.status(HTTP_STATUS.OK).json({
+    success: true,
+    data: {
+      representation,
+    },
+  });
+});
+
+/**
+ * Purges physical binary file from storage while retaining asset metadata and representations (Scenario M).
+ * Route: POST /api/v1/assets/:id/purge-binary
+ */
+export const purgeAssetBinary = asyncHandler(async (req, res) => {
+  const asset = await assetService.purgeAssetBinary(req.params.id, req.user._id);
+
+  return res.status(HTTP_STATUS.OK).json({
+    success: true,
+    message: 'Asset binary purged successfully; derived representations retained for conversation context.',
+    data: {
+      asset: formatAssetResponse(asset),
+    },
+  });
+});
+
+/**
+ * Generates an immutable, verified citation for an asset.
+ * Route: POST /api/v1/assets/:id/citations
+ */
+export const createAssetCitation = asyncHandler(async (req, res) => {
+  const { representationType, location, snippet } = req.body || {};
+  const citation = await assetService.generateAssetCitation(req.params.id, req.user._id, {
+    representationType,
+    location,
+    snippet,
+  });
+
+  return res.status(HTTP_STATUS.CREATED).json({
+    success: true,
+    message: 'Citation created successfully.',
+    data: {
+      citation,
     },
   });
 });
