@@ -58,7 +58,7 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
 ### Phase 3: Private Asset and Document Foundation
 - **Status:** in_progress
 - **Branch:** `phase-3-assets-and-documents` (branched from `main` at `1f94414`)
-- **Current Task:** Task 3.6 — Asset and Document API Test Suite & Phase 3 Consolidation
+- **Current Task:** Phase 3 Gate & Owner Merge Review (All 6 tasks completed and verified)
 - **Completed Tasks:**
   - **Task 3.1 — Private Object Storage Abstraction & Unified Asset Model:**
     - Defined `ASSET_CONSTANTS` in `backend/src/utils/constants.js`.
@@ -90,6 +90,10 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
     - Enforced strict user isolation (`NFR-SEC-004`) returning uniform 404 `NOT_FOUND` on foreign asset downloads.
     - Implemented background reconciliation service (`modules/assets/lifecycle/assetReconciliationService.js`): `reconcileExpiredAssets()` sweeps expired ephemeral files; `reconcileOrphanedTempFiles()` sweeps abandoned staging chunks (Scenario O).
     - Verified with 15/15 tests passing in `tests/api/asset-download-lifecycle.test.js`.
+  - **Task 3.6 — Comprehensive Acceptance Suite & Phase 3 Consolidation:**
+    - Implemented `tests/api/asset-document-suite.test.js` covering 10 acceptance scenarios: authentic PDF upload, executable rejection (`malware.pdf`), CSV multi-representation extraction, durable cryptographic citations, signed token download, active session download, tampered/expired token rejection, cross-tenant isolation (User B receives 404 on User A asset), Scenario M physical binary purge (HTTP 410 Gone), and background reconciliation sweepers (Scenario O).
+    - Added `"test:asset-suite"` script to `package.json`.
+    - Verified with 10/10 tests passing in `tests/api/asset-document-suite.test.js` and 136/136 tests passing in `tests/api/*.test.js`.
   - **Full Codebase Consistency Audit & Performance Engineering:**
     - Audited every single backend, route, model, controller, middleware, and test file line by line.
     - Standardized all controllers (`authController`, `profileController`, `assetController`) with `asyncHandler`.
@@ -97,7 +101,7 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
     - Added missing bridges: `controllers/assetController.js`, `routes/assetRoutes.js`, `services/assetService.js`, and directory aliases `modules/identity/persistence/` and `modules/assets/domain/`.
     - Fixed `Session.deleteMany({ userId })` field invariant.
     - Removed redundant route-level CSRF in `assetRoutes.js`.
-    - Added granular test scripts to `package.json` and optimized test execution via `--import ./tests/setup.js` (126/126 tests passing in 100s).
+    - Added granular test scripts to `package.json` and optimized test execution via `--import ./tests/setup.js` (136/136 tests passing in 126s).
 - **Completed Tasks:**
   - **Task 2.1 — Database Connection & Identity/Session Models:** Implemented MongoDB lifecycle engine, base schema options, User domain model with bcrypt password hashing, Session registry with token rotation and breach detection, AuthIdentity model, and integration test suite (`tests/api/identity-models.test.js`). Approved and committed on `phase-2-identity-and-sessions` (commit `f6a5a2a`).
   - **Task 2.2 — Authentication Service, Controllers, and Google OAuth 2.0:** Implemented token service, Zod request validation middleware, auth schemas, name derivation, Google OAuth 2.0 with HMAC signed state parameter, auth service, auth controller, auth routes, and native HTTP integration test suite (`tests/api/auth.test.js`). Approved and committed on `phase-2-identity-and-sessions` (commit `4dfeb59`).
@@ -269,7 +273,8 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
 | Document Parser Tests | `npm run test:parser` | 12 passed | 12/12 passed in 16.9s | PASS |
 | Asset Provenance Tests | `npm run test:provenance` | 7 passed | 7/7 passed in 40.2s | PASS |
 | Asset Download & Lifecycle | `npm run test:download` | 15 passed | 15/15 passed in 34.2s | PASS |
-| Full API Test Suite | `npm run test:api` | 126 passed | 126/126 passed in 100.4s | PASS |
+| Phase 3 Acceptance Suite | `npm run test:asset-suite` | 10 passed | 10/10 passed in 51.2s | PASS |
+| Full API Test Suite | `npm run test:api` | 136 passed | 136/136 passed in 126.8s | PASS |
 | Quality Verification | `npm run verify` | Lint & Build pass | 0 lint errors, 1,513 client modules built | PASS |
 | Client Dist Cleanup | `npm run clean:client` | Clean client/dist/ | Clean working tree | PASS |
 
@@ -288,8 +293,8 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
 ## 5-Question Reboot Check
 | Question | Answer |
 |----------|--------|
-| Where am I? | Phase 3: Private Asset and Document Foundation, Task 3.5 Complete & Verified |
-| Where am I going? | Task 3.6: Asset and document API tests and Phase 3 consolidation |
+| Where am I? | Phase 3: Private Asset and Document Foundation, Tasks 3.1 through 3.6 Complete & Verified |
+| Where am I going? | Phase 3 Gate & Owner Merge Review; then Phase 4 (Durable Threads, Turns, Messages, Events) |
 | What's the goal? | Implement Personal AI Agent V1 (Operon) per master specification with full functionality preservation, correct architecture, and owner review gates |
-| What have I learned? | Private signed download tokens allow secure media streaming without exposing session cookies or static public endpoints. Background reconciliation safely reclaims storage without losing conversation grounding. 126/126 tests passing across 11 suites. |
-| What have I done? | Implemented Task 3.5: getDownloadToken, downloadAsset streaming endpoint, GoneError (HTTP 410 BINARY_PURGED), assetReconciliationService.js (expired asset sweeper & orphaned temp file sweeper), asset-download-lifecycle.test.js (15/15 passed), 126/126 full regression suite passing, verify passing. |
+| What have I learned? | Phase 3 establishes a secure private asset subsystem: zero public static serving, MIME magic-byte enforcement, multi-representation derivation with provenance, HMAC signed download streaming, Scenario M binary purges, and automated background reconciliation. 136/136 tests passing across 12 suites. |
+| What have I done? | Completed Tasks 3.1 through 3.6. Implemented comprehensive acceptance test suite (`tests/api/asset-document-suite.test.js`), added `npm run test:asset-suite`, verified 10/10 acceptance tests passing and 136/136 regression tests passing. Built walkthrough artifacts and updated documentation. Ready for commit and owner review. |

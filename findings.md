@@ -331,3 +331,29 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
   - `reconcileOrphanedTempFiles(maxAgeMs)`:
     - Sweeps staging directory (`storage/private/temp`) for abandoned upload chunks older than threshold (default 1 hour) left by aborted or crashed multipart uploads (`Scenario O`).
     - Safely reclaims storage capacity with zero risk to verified persistent assets.
+
+## 21. Phase 3 Asset & Document Foundation Acceptance Verification (Task 3.6)
+- **Comprehensive End-to-End Acceptance (`tests/api/asset-document-suite.test.js`):**
+  - Unifies all Phase 3 requirements under a single acceptance suite exercising the full stack:
+    1. **Multi-Format Ingestion & MIME Defense:**
+       - Authentic PDF, CSV, DOCX, XLSX, TXT, and Markdown uploads stored in private user partitions.
+       - Disguised PE binaries rejected with 400 Bad Request (`EXECUTABLE_NOT_PERMITTED`).
+    2. **Multi-Representation Derivation & Provenance:**
+       - Extraction creates `extracted_text`, `spreadsheet_table`, and `text_preview` records.
+       - Full processing provenance (`pipeline`, `engine`, `engineVersion`, `sourceChecksum`, `durationMs`, `pageRange`, `sheetNames`, `metadata`).
+       - Durable citations bind conversational statements to cryptographic checksums.
+    3. **Private Dual-Auth Streaming Downloads:**
+       - HMAC-SHA256 short-lived download tokens issued and verified.
+       - Direct binary streaming with defensive headers (`nosniff`, `private`, `inline`/`attachment`).
+       - Tampered, mismatched, and expired tokens rejected with 401 UNAUTHENTICATED.
+    4. **Strict Account Data Isolation (`NFR-SEC-004`):**
+       - Cross-tenant probing returns uniform 404 `NOT_FOUND` across all 6 asset endpoints (`GET /:id`, `POST /:id/extract`, `GET /:id/representations`, `GET /:id/token`, `GET /:id/download`, `DELETE /:id`).
+    5. **Scenario M Binary Purge with Conversation Continuity:**
+       - Physical storage binary purged; download returns 410 Gone (`BINARY_PURGED`).
+       - Derived text representations remain 100% available for ongoing chat turns and AI grounding context.
+    6. **Lifecycle Sweeper & Reconciliation Engine (Scenario O):**
+       - `reconcileExpiredAssets()` sweeps expired ephemeral files.
+       - `reconcileOrphanedTempFiles()` sweeps abandoned upload chunks.
+  - 10/10 acceptance tests passing.
+  - Full regression: 136/136 tests passing across all 12 test suites.
+  - Static analysis & build: 0 lint errors, 1,513 client modules transformed in 2.45s.
