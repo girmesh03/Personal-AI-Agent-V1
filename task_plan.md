@@ -6,10 +6,10 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
 Deliver a fully verified, production-grade Personal AI Agent V1 with provider-neutral LangChain/LangGraph architecture, single root package manifest, protected MUI theme, durable multimodal chat lifecycle, Postman-style backend API integration test suite, and complete functionality preservation across all 214 historical V0 source sections.
 
 ## Next Step
-Task 4.5: Conversation and message API tests & Phase 4 Gate Review.
+Phase 4 Gate Review and Owner Merge Authorization into `main`; then Phase 5 (Provider Registry and LangChain Model Integration).
 
 ## Current Phase
-Phase 4: Durable Threads, Turns, Messages, Events - in_progress
+Phase 4: Durable Threads, Turns, Messages, Events - complete (awaiting merge gate review)
 
 ## Phases
 
@@ -62,9 +62,9 @@ Phase 4: Durable Threads, Turns, Messages, Events - in_progress
 - [x] Task 4.2: Cursor-based message pagination and thread management APIs (Completed & Verified - 11/11 passing)
 - [x] Task 4.3: Turn lifecycle service (normal send, retry, edit, branch, continue) (Completed & Verified - 14/14 passing)
 - [x] Task 4.4: RunEvent durable event log with sequence cursors for stream replay (Completed & Verified - 13/13 passing)
-- [ ] Task 4.5: Conversation and message API tests
-- [ ] Phase 4 Gate & Owner Merge Review
-- **Status:** in_progress
+- [x] Task 4.5: Conversation and message API tests (Completed & Verified - 15/15 passing)
+- [ ] Phase 4 Gate & Owner Merge Review (Awaiting owner approval for ff-only merge)
+- **Status:** complete (awaiting owner merge authorization)
 
 ### Phase 5: Provider Registry and LangChain Model Integration
 - [ ] Task 5.1: Provider capability registry and qualification schemas

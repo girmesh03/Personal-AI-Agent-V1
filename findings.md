@@ -472,4 +472,39 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
    - `npm run test:turns`: 14/14 tests passing in 68.6s (zero regressions).
    - `npm run lint`: 0 errors.
 
+---
+
+## 26. Task 4.5: Conversation & Message Acceptance Suite and Phase 4 Consolidation
+
+### Key Implementation Findings & Defenses
+1. **Thread Active Branch Population & Comparison Normalization:**
+   - In `threadService.getThreadById`, `.populate('activeBranchId')` populates the active branch document. Tests and consumers comparing `thread.activeBranchId` must inspect `thread.activeBranchId?._id || thread.activeBranchId` and cast to string (`String(...)`) to prevent comparing an Object to an ID string.
+2. **Turn In-Memory Lease Cache Invalidation:**
+   - In `turnService.cancelTurn`, calling `Turn.releaseRunLock(turn._id, turn.activeRunId)` atomically clears the MongoDB document. However, the in-memory `turn` instance retained the prior `runLock` structure. Adding explicit reset:
+     ```javascript
+     turn.runLock = { holderRunId: null, leaseAcquiredAt: null, leaseExpiresAt: null };
+     ```
+     before `turn.save()` guarantees that the returned turn representation immediately reflects the released lock to API callers.
+3. **Mongoose Document ID Stringification in Strict Node Assertions:**
+   - Node's strict assertion mode (`node:assert/strict`) treats `assert.equal(string, object)` as failing (`ERR_ASSERTION`). When querying documents directly with Mongoose (`MessageBranch.findOne(...)`), assigning `branchId = rootBranch._id.toString()` avoids type mismatches across deep API comparisons.
+4. **End-to-End Test Coverage (15 Scenarios):**
+   - Thread initialization and automatic root `main` branch creation.
+   - Turn 1 prompt submission, user message sequence 1, initial `AgentRun` provisioning, and lease locking.
+   - Deduplicated idempotent replay with matching `idempotencyKey`.
+   - Owned multimodal document asset binding (`file_ref` part) and attachment metadata.
+   - Branch-isolated edits creating divergent branches while keeping original branch lineage pristine.
+   - Bidirectional branch switching (`/branches/:id/switch`).
+   - Lease collision prevention with 409 Conflict.
+   - Retry generation, generation attempt incrementation, and user turn preservation.
+   - Continuation generation (`isContinuation: true`) acquiring run lock.
+   - Turn cancellation with lock release and terminal event emission.
+   - Backwards pagination returning chronologically ordered message slices.
+   - SSE historical event replay and `Last-Event-ID` resumption skipping received events.
+   - Strict cross-user isolation (`NFR-SEC-004`) returning uniform 404 across all conversation routes.
+   - Soft-delete thread cascading to all message documents.
+5. **Verification Evidence:**
+   - `npm run test:conversation-suite`: 15/15 tests passing in 104.75s.
+   - `npm run verify`: 0 lint errors, client builds cleanly in 5.23s.
+
+
 

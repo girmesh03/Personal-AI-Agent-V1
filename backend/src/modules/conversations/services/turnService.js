@@ -747,8 +747,13 @@ export async function cancelTurn(userId, threadId, turnId, options = {}) {
     await Turn.releaseRunLock(turn._id, turn.activeRunId);
   }
 
-  // 4. Transition turn status to cancelled
+  // 4. Transition turn status to cancelled and clear in-memory runLock
   turn.status = 'cancelled';
+  turn.runLock = {
+    holderRunId: null,
+    leaseAcquiredAt: null,
+    leaseExpiresAt: null,
+  };
   await turn.save();
 
   return {
