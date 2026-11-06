@@ -233,3 +233,46 @@ export const CHAT_CONSTANTS = Object.freeze({
   MAX_MESSAGE_LENGTH: 10000,
 });
 
+/**
+ * Asset storage, media category, and private access constants (Phase 3).
+ * @constant
+ */
+export const ASSET_CONSTANTS = Object.freeze({
+  STORAGE_PROVIDERS: Object.freeze(['local_disk', 'cloudinary', 's3']),
+  DEFAULT_STORAGE_PROVIDER: 'local_disk',
+  CATEGORIES: Object.freeze(['document', 'image', 'audio', 'video', 'archive', 'other']),
+  STATUSES: Object.freeze(['uploading', 'ready', 'processing', 'failed', 'deleted']),
+  RETENTION_POLICIES: Object.freeze(['temporary', 'persistent']),
+  MAX_FILE_SIZE_BYTES: 50 * 1024 * 1024, // 50MB general limit
+  DEFAULT_SIGNED_URL_EXPIRY_SECONDS: 900, // 15 minutes
+  ALLOWED_DOCUMENT_EXTENSIONS: Object.freeze(['.pdf', '.docx', '.xlsx', '.csv', '.txt', '.md', '.json']),
+  ALLOWED_IMAGE_EXTENSIONS: Object.freeze(['.jpg', '.jpeg', '.png', '.webp', '.gif', '.svg']),
+  ALLOWED_AUDIO_EXTENSIONS: Object.freeze(['.wav', '.mp3', '.m4a', '.aac', '.ogg', '.webm']),
+  ALLOWED_MIME_TYPES: Object.freeze([
+    // Documents
+    'application/pdf',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'text/csv',
+    'text/plain',
+    'text/markdown',
+    'application/json',
+    // Images
+    'image/jpeg',
+    'image/png',
+    'image/webp',
+    'image/gif',
+    'image/svg+xml',
+    // Audio
+    'audio/wav',
+    'audio/wave',
+    'audio/x-wav',
+    'audio/mpeg',
+    'audio/mp3',
+    'audio/mp4',
+    'audio/aac',
+    'audio/ogg',
+    'audio/webm',
+  ]),
+});
+

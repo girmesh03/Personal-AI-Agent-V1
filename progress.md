@@ -45,21 +45,29 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
   - **Phase 1 Gate & Owner Merge Review:** Approved by owner; merged to `main`.
 
 ### Phase 2: Identity, Sessions, and Account Security
-- **Status:** gate_ready
-- **Branch:** `phase-2-identity-and-sessions` (branched from `main` at `6c4b80d`)
-- **Current Task:** Phase 2 Gate & Owner Merge Review
+- **Status:** complete
+- **Branch:** `phase-2-identity-and-sessions` -> merged to `main` (`1f94414`) and pushed to `origin/main`.
 - **Completed Tasks:**
   - **Task 2.1 — Database Connection Lifecycle & Domain Models:** Committed (`f6a5a2a`).
   - **Task 2.2 — Auth Service, Controllers, and Google OAuth 2.0:** Committed (`4dfeb59`).
   - **Task 2.3 — Session Middleware, CSRF Protection, and Rate Limiting:** Committed (`f3debef`).
   - **Task 2.4 — Credential Envelope Encryption Service for BYOK Provider Credentials:** Committed (`2aef358`).
-  - **Task 2.5 — Comprehensive Identity & Session API Test Suite:** Completed & Verified.
-    - Implemented `infrastructure/security/userIsolation.js` (`assertUserOwnership`, `buildOwnerQuery` per NFR-SEC-004).
-    - Implemented `modules/identity/services/accountService.js` (`exportAccountData`, `deleteAccount` per FR-CORE-SEC-003).
-    - Added collision-free `jti` (UUID) to JWT access and refresh tokens to prevent `refreshTokenHash` collisions during high-concurrency requests in the same second.
-    - Built comprehensive acceptance test suite in `tests/api/identity-suite.test.js` (12/12 passing).
-    - Ran full regression test suite across all 6 API test files: 57/57 tests passing in 59.6s.
-    - Ran `npm run verify` passing 100% (0 lint errors, client built in 6.19s).
+  - **Task 2.5 — Comprehensive Identity & Session API Test Suite:** Committed (`1f94414`).
+  - **Phase 2 Gate Review & Fast-Forward Merge:** Approved by owner; fast-forward merged to `main` at `1f94414`; pushed to `origin/main`; local branch deleted.
+
+### Phase 3: Private Asset and Document Foundation
+- **Status:** in_progress
+- **Branch:** `phase-3-assets-and-documents` (branched from `main` at `1f94414`)
+- **Current Task:** Task 3.1 — Private Object Storage Abstraction and Asset Metadata Models (Completed & Verified)
+- **Completed Tasks:**
+  - **Task 3.1 — Private Object Storage Abstraction & Unified Asset Model:**
+    - Defined `ASSET_CONSTANTS` in `backend/src/utils/constants.js`.
+    - Implemented private storage service `modules/assets/storage/storageService.js` (streaming read/write, SHA-256 calculation, path traversal protection, HMAC signed short-lived download tokens).
+    - Created unified `Asset` persistence model in `modules/assets/persistence/Asset.js` with representations, soft delete, and backward-compatible virtuals for legacy `Audio.js` callers.
+    - Added compatibility bridges: `backend/src/services/storageService.js`, `backend/src/models/Asset.js`, and `backend/src/models/Audio.js`.
+    - Verified with 15/15 tests passing in `tests/api/storage-asset.test.js`.
+    - Full regression: 72/72 tests passing across all 7 test files.
+    - Verification: `npm run verify` passed (0 lint errors, client built in 3.58s).
     - Cleaned client dist via `npm run clean:client`.
 - **Completed Tasks:**
   - **Task 2.1 — Database Connection & Identity/Session Models:** Implemented MongoDB lifecycle engine, base schema options, User domain model with bcrypt password hashing, Session registry with token rotation and breach detection, AuthIdentity model, and integration test suite (`tests/api/identity-models.test.js`). Approved and committed on `phase-2-identity-and-sessions` (commit `f6a5a2a`).

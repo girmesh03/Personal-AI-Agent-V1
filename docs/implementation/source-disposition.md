@@ -35,7 +35,7 @@
 | 20 | `backend/src/routes/userRoutes.js` | `backend/src/modules/identity/http/profileRoutes.js` (bridge: `backend/src/routes/userRoutes.js`) | User profile, preferences, and provider BYOK configuration routes. | Implemented (Phase 2, Task 2.4) |
 | 21 | `backend/src/services/documentGenerationService.js` | `backend/src/modules/documents/generation/documentGenerationService.js` | PDF (with Ethiopic fonts), DOCX, XLSX, CSV, Markdown, and JSON file generation. | Pending |
 | 22 | `backend/src/services/googleDriveService.js` | `backend/src/modules/connectors/googleDrive/googleDriveService.js` | Google Drive connector: OAuth state verification, file export, private sharing. | Pending |
-| 23 | `backend/src/services/storageService.js` | `backend/src/modules/assets/storage/storageService.js` | Private durable object storage service with checksum validation and signed URLs. | Pending |
+| 23 | `backend/src/services/storageService.js` | `backend/src/modules/assets/storage/storageService.js` (bridge: `backend/src/services/storageService.js`) | Private durable object storage service with checksum validation and signed URLs. | Implemented (Phase 3, Task 3.1) |
 | 24 | `backend/src/services/telegramService.js` | `backend/src/modules/connectors/telegram/telegramService.js` | Telegram delivery service: formatting, preview cards, channel delivery with approval. | Pending |
 | 25 | `backend/src/services/ttsService.js` | `backend/src/modules/audio/ttsService.js` | Optional remote TTS synthesis with cost controls and user consent. | Pending |
 | 26 | `backend/src/utils/attachmentProcessor.js` | Split: `assets/processing/assetProcessor.js`, `documents/ingestion/*` | Deterministic file extraction, metadata extraction, text normalization, and chunking. | Pending |
@@ -56,7 +56,7 @@
 | 48 | `backend/src/controllers/sttController.js` | `backend/src/modules/audio/http/speechController.js` | Controller for audio transcription requests. | Pending |
 | 49 | `backend/src/controllers/userController.js` | `backend/src/modules/identity/http/profileController.js` (bridge: `backend/src/controllers/userController.js`) | Controller for user profile, settings, and BYOK credentials. | Implemented (Phase 2, Task 2.4) |
 | 50 | `backend/src/jobs/sweeper.js` | `backend/src/jobs/reconciliation/storageReconciliationJob.js` | Database-backed asset cleanup, outbox reconciliation, orphan file pruning. | Pending |
-| 51 | `backend/src/models/Audio.js` | Replaced by `modules/assets/persistence/Asset.js` | Unified asset model with audio representation subdocuments. | Pending |
+| 51 | `backend/src/models/Audio.js` | `backend/src/modules/assets/persistence/Asset.js` (bridge: `backend/src/models/Audio.js`, `backend/src/models/Asset.js`) | Unified asset model with audio representation subdocuments and backward-compatible virtuals. | Implemented (Phase 3, Task 3.1) |
 | 52 | `backend/src/models/Branch.js` | `backend/src/modules/operations/branches/persistence/Branch.js` | Branch schema and indices under operations module. | Pending |
 | 53 | `backend/src/models/Chat.js` | Replaced by `Thread.js`, `Turn.js`, `Message.js`, `MessageBranch.js` | Deconstructed conversation persistence models (no unbounded message arrays). | Pending |
 | 54 | `backend/src/models/Report.js` | `backend/src/modules/operations/reports/persistence/Report.js` | Operational inspection report schema and indices under operations module. | Pending |

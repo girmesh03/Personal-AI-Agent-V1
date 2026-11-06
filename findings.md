@@ -195,3 +195,22 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
   - Cross-user IDOR rejection ensuring server-derived identity strictly governs data access.
   - Zero plaintext secrets across all responses.
   - Clean account data export and complete database account deletion.
+
+## 15. Private Object Storage Abstraction & Unified Asset Model (Task 3.1)
+- **Zero Public Exposure Invariant (`FR-CORE-DOC-003`):**
+  - Public static upload serving (`express.static('/uploads')`) is strictly prohibited.
+  - All files are stored under private paths unreachable by static web servers (e.g. `storage/private/{userId}/{year}/{month}/{storageKey}`).
+  - Direct URL access to stored files is impossible without ownership-validated signed tokens or session middleware.
+- **Path Traversal & Ingestion Defenses:**
+  - `sanitizeFilename` strips null bytes, directory traversal sequences (`../`), control characters, and special characters.
+  - `resolveSafeStoragePath` verifies that every target path stays strictly inside the designated private storage root.
+- **Real-Time Streaming Integrity:**
+  - `writeStream` incrementally computes SHA-256 digests on binary streams and enforces hard size limits (`maxSizeBytes`), automatically deleting partial files if the limit is exceeded.
+- **Short-Lived Signed Download Authorization:**
+  - Download access uses HMAC-SHA256 tokens (`generateSignedDownloadToken` / `verifySignedDownloadToken`) containing `assetId`, `userId`, and `expiresAt` (default 15 minutes).
+  - Validated using constant-time comparison (`crypto.timingSafeEqual`) after length validation to prevent timing attacks.
+- **Unified Asset Domain Model (`modules/assets/persistence/Asset.js`):**
+  - Consolidates all user attachments, documents, audio recordings, and media under a unified schema.
+  - Replaces legacy fragmented models (such as standalone `Audio.js` per row 51 of `source-disposition.md`).
+  - Stores rich multimodal representations: `extractedText`, `transcript` (with engine, duration, language), `preview`, and `metadata`.
+  - Provides backward-compatibility virtuals (`user`, `fileName`, `size`, `transcription`, `duration`, `sttEngine`) to ensure uninterrupted continuity for legacy consumers.
