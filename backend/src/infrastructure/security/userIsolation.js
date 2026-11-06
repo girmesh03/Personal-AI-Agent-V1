@@ -21,7 +21,7 @@ export const assertUserOwnership = (resource, userId, ownerField = 'userId') => 
     throw new NotFoundError('The requested resource was not found.', 'NOT_FOUND');
   }
 
-  const rawOwner = resource[ownerField] || resource.user || resource.userId;
+  const rawOwner = resource[ownerField] || resource.owner || resource.user || resource.userId;
   const ownerIdStr = rawOwner?._id ? rawOwner._id.toString() : rawOwner?.toString();
   const currentUserIdStr = userId?.toString();
 

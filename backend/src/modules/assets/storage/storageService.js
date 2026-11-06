@@ -36,6 +36,22 @@ export const getPrivateStorageRoot = () => {
 };
 
 /**
+ * Resolves and ensures existence of the private temporary staging directory.
+ * Used for multipart streaming chunk ingestion prior to verification and placement.
+ *
+ * @returns {string} Absolute path to temp staging root
+ */
+export const getPrivateTempRoot = () => {
+  const root = path.resolve(getPrivateStorageRoot(), 'temp');
+
+  if (!fs.existsSync(root)) {
+    fs.mkdirSync(root, { recursive: true });
+  }
+
+  return root;
+};
+
+/**
  * Sanitizes an incoming filename to prevent path traversal and shell injection.
  *
  * @param {string} rawName

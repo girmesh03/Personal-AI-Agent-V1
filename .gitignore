@@ -1,8 +1,10 @@
 # env
 .env
 
-# uploads
+# uploads & private storage
 backend/uploads
+/storage
+/storage/
 
 # Logs
 logs

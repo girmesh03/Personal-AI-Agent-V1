@@ -244,6 +244,8 @@ export const ASSET_CONSTANTS = Object.freeze({
   STATUSES: Object.freeze(['uploading', 'ready', 'processing', 'failed', 'deleted']),
   RETENTION_POLICIES: Object.freeze(['temporary', 'persistent']),
   MAX_FILE_SIZE_BYTES: 50 * 1024 * 1024, // 50MB general limit
+  MAX_BATCH_FILES: 5,
+  MAX_BATCH_SIZE_BYTES: 50 * 1024 * 1024, // 50MB cumulative batch limit
   DEFAULT_SIGNED_URL_EXPIRY_SECONDS: 900, // 15 minutes
   ALLOWED_DOCUMENT_EXTENSIONS: Object.freeze(['.pdf', '.docx', '.xlsx', '.csv', '.txt', '.md', '.json']),
   ALLOWED_IMAGE_EXTENSIONS: Object.freeze(['.jpg', '.jpeg', '.png', '.webp', '.gif', '.svg']),
@@ -273,6 +275,58 @@ export const ASSET_CONSTANTS = Object.freeze({
     'audio/aac',
     'audio/ogg',
     'audio/webm',
+    'video/webm',
   ]),
+});
+
+/**
+ * Backward-compatible audio constants for V0 service/route consumers.
+ * @constant
+ */
+export const AUDIO_CONSTANTS = Object.freeze({
+  MAX_FILE_SIZE_BYTES: 25 * 1024 * 1024, // 25MB
+  MAX_FILES_COUNT: 5,
+  ALLOWED_EXTENSIONS: Object.freeze(['.wav', '.mp3', '.m4a', '.aac', '.ogg', '.webm']),
+  ALLOWED_MIME_TYPES: Object.freeze([
+    'audio/wav',
+    'audio/wave',
+    'audio/x-wav',
+    'audio/mpeg',
+    'audio/mp3',
+    'audio/mp4',
+    'audio/aac',
+    'audio/ogg',
+    'audio/webm',
+    'video/webm',
+  ]),
+});
+
+/**
+ * Backward-compatible attachment constants for V0 service/route consumers.
+ * @constant
+ */
+export const ATTACHMENT_CONSTANTS = Object.freeze({
+  MAX_FILE_SIZE_BYTES: 25 * 1024 * 1024, // 25MB
+  MAX_FILES_COUNT: 5,
+  ALLOWED_EXTENSIONS: Object.freeze([
+    '.pdf', '.docx', '.xlsx', '.csv', '.txt', '.md', '.json',
+    '.jpg', '.jpeg', '.png', '.webp', '.gif', '.svg',
+  ]),
+  ALLOWED_MIME_TYPES: Object.freeze([
+    'application/pdf',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'text/csv',
+    'text/plain',
+    'text/markdown',
+    'application/json',
+    'image/jpeg',
+    'image/png',
+    'image/webp',
+    'image/gif',
+    'image/svg+xml',
+  ]),
+  ALLOWED_IMAGE_EXTENSIONS: Object.freeze(['.jpg', '.jpeg', '.png', '.webp', '.gif', '.svg']),
+  ALLOWED_IMAGE_MIME_TYPES: Object.freeze(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml']),
 });
 

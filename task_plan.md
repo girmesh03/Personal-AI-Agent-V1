@@ -48,8 +48,8 @@ Phase 3: Private Asset and Document Foundation - in_progress
 - **Status:** complete
 
 ### Phase 3: Private Asset and Document Foundation
-- [x] Task 3.1: Private object storage abstraction and asset metadata models (Completed & Verified - 15/15 passing)
-- [ ] Task 3.2: Secure streaming multipart upload pipeline with MIME sniffing and size bounds
+- [x] Task 3.1: Private object storage abstraction and asset metadata models (Committed - bb9375c)
+- [x] Task 3.2: Secure streaming multipart upload pipeline with MIME sniffing and size bounds (Completed & Verified - 20/20 passing)
 - [ ] Task 3.3: Deterministic document parsing (PDF, DOCX, XLSX, CSV, TXT, Markdown)
 - [ ] Task 3.4: Asset representation and provenance models
 - [ ] Task 3.5: Private signed download and asset lifecycle reconciliation

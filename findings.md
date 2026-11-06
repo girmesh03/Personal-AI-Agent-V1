@@ -214,3 +214,25 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
   - Replaces legacy fragmented models (such as standalone `Audio.js` per row 51 of `source-disposition.md`).
   - Stores rich multimodal representations: `extractedText`, `transcript` (with engine, duration, language), `preview`, and `metadata`.
   - Provides backward-compatibility virtuals (`user`, `fileName`, `size`, `transcription`, `duration`, `sttEngine`) to ensure uninterrupted continuity for legacy consumers.
+
+## 16. Secure Streaming Multipart Upload Pipeline & MIME Sniffing (Task 3.2)
+- **MIME Magic-Byte Sniffing (`modules/assets/validation/mimeSniffer.js`):**
+  - Deterministically inspects initial file headers (magic bytes) to ascertain actual binary format rather than trusting client-provided `Content-Type` headers or file extensions.
+  - Detects and strictly rejects executable binaries and scripts: Windows PE (`MZ`), Linux ELF (`\x7FELF`), Java bytecode (`0xCA, 0xFE, 0xBA, 0xBE`), Mach-O binaries, and shell scripts (`#!/`) with 400 Bad Request (`EXECUTABLE_NOT_PERMITTED`).
+  - Verifies authentic format signatures for PDF, PNG, JPEG, GIF, WebP, WAV, MP3, OGG, FLAC, WebM, DOCX, XLSX, JSON, CSV, and plain text.
+  - Detects contradictions between declared client MIME types and verified magic bytes, rejecting mismatches with 400 Bad Request (`INVALID_FILE_TYPE`).
+- **Multipart Upload Ingestion Pipeline (`modules/assets/http/uploadMiddleware.js`):**
+  - Chunks stream into private temporary staging directories (`storage/private/temp`) with UUID filenames.
+  - Enforces strict single-file caps (50MB), batch file limits (5 files), and cumulative batch size validation (50MB).
+  - Unlinks empty files (0 bytes) and rejects with 400 Bad Request (`EMPTY_FILE`).
+  - Implements automatic cleanup on failure, guaranteeing zero orphaned temporary files on aborted or invalid uploads.
+- **Asset Service & HTTP Controller (`modules/assets/services/assetService.js`, `modules/assets/http/assetController.js`):**
+  - Streams temporary files directly into user-partitioned private storage (`storage/private/{userId}/{year}/{month}/{storageKey}`) with SHA-256 integrity calculation.
+  - Creates unified `Asset` documents in MongoDB linked to authenticated owner.
+  - Maps internal records into client-safe DTOs, strictly concealing internal filesystem paths and private storage keys.
+  - Enforces user isolation (`NFR-SEC-004`) returning uniform 404 `NOT_FOUND` on foreign asset access.
+  - Multi-file batch uploads include atomic rollback: if an asset in a batch fails, previously stored assets in that batch are cleanly removed from storage and database.
+- **Route Mounting & Backward Compatibility:**
+  - Mounted `/api/v1/assets` in `backend/src/infrastructure/http/routes.js` with `requireUser` and `csrfProtection`.
+  - Established compatibility bridge in `backend/src/middleware/uploadMiddleware.js` re-exporting `uploadSingleAudioMiddleware`, `uploadReportAudiosMiddleware`, and `uploadChatAttachmentsMiddleware`.
+  - Updated `docs/implementation/source-disposition.md` row 26 (`backend/src/middleware/uploadMiddleware.js`) to `Implemented (Phase 3, Task 3.2)`.

@@ -9,6 +9,7 @@ import { env } from '../../config/env.js';
 import { isDbConnected, getDbStatus } from '../database/connection.js';
 import authRoutes from '../../modules/identity/http/authRoutes.js';
 import profileRoutes from '../../modules/identity/http/profileRoutes.js';
+import assetRoutes from '../../modules/assets/http/assetRoutes.js';
 
 const router = Router();
 
@@ -39,5 +40,11 @@ router.use('/auth', authRoutes);
  */
 router.use('/users', profileRoutes);
 router.use('/user', profileRoutes);
+
+/**
+ * Private asset and document ingestion routes.
+ * Mounts: /api/v1/assets/*
+ */
+router.use('/assets', assetRoutes);
 
 export default router;
