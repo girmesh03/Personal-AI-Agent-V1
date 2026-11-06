@@ -53,6 +53,8 @@ export const getPrivateTempRoot = () => {
   return root;
 };
 
+export const getTempStorageRoot = getPrivateTempRoot;
+
 /**
  * Sanitizes an incoming filename to prevent path traversal and shell injection.
  *

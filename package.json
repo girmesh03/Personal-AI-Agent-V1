@@ -29,6 +29,7 @@
     "test:upload": "node --import ./tests/setup.js --test tests/api/asset-upload.test.js",
     "test:parser": "node --import ./tests/setup.js --test tests/api/document-parser.test.js",
     "test:provenance": "node --import ./tests/setup.js --test tests/api/asset-provenance.test.js",
+    "test:download": "node --import ./tests/setup.js --test tests/api/asset-download-lifecycle.test.js",
     "verify": "npm run lint && npm run build:web"
   },
   "devDependencies": {

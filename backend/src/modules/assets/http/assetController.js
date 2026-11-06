@@ -3,10 +3,13 @@
  * @description HTTP controllers for private asset ingestion, listing, and lifecycle operations.
  */
 
+import fs from 'node:fs';
 import * as assetService from '../services/assetService.js';
+import * as storageService from '../storage/storageService.js';
 import { HTTP_STATUS } from '../../../utils/constants.js';
-import { BadRequestError } from '../../../shared/errors/AppError.js';
+import { BadRequestError, UnauthenticatedError, GoneError, NotFoundError } from '../../../shared/errors/AppError.js';
 import { asyncHandler } from '../../../infrastructure/http/middleware/asyncHandler.js';
+import { logger } from '../../../config/logger.js';
 
 /**
  * Maps an internal Asset document into a safe external client DTO.
@@ -228,4 +231,106 @@ export const createAssetCitation = asyncHandler(async (req, res) => {
       citation,
     },
   });
+});
+
+/**
+ * Issues an authenticated short-lived signed download token for an asset.
+ * Route: GET /api/v1/assets/:id/token
+ */
+export const getDownloadToken = asyncHandler(async (req, res) => {
+  const asset = await assetService.getAssetById(req.params.id, req.user._id);
+
+  if (asset.hasBinaryPurged) {
+    throw new GoneError('The physical binary for this asset has been purged.', 'BINARY_PURGED');
+  }
+
+  const expiresInSeconds = req.query.expiresIn
+    ? Math.min(3600, Math.max(60, parseInt(req.query.expiresIn, 10)))
+    : 900;
+
+  const token = storageService.generateSignedDownloadToken({
+    assetId: asset._id.toString(),
+    userId: req.user._id.toString(),
+    expiresInSeconds,
+  });
+
+  const downloadUrl = `/api/v1/assets/${asset._id}/download?token=${token}`;
+
+  return res.status(HTTP_STATUS.OK).json({
+    success: true,
+    data: {
+      token,
+      downloadUrl,
+      expiresInSeconds,
+      expiresAt: new Date(Date.now() + expiresInSeconds * 1000).toISOString(),
+    },
+  });
+});
+
+/**
+ * Streams private asset binary using signed token or active user session.
+ * Route: GET /api/v1/assets/:id/download
+ */
+export const downloadAsset = asyncHandler(async (req, res) => {
+  let effectiveUserId = null;
+
+  // 1. Check signed query token first
+  if (req.query.token) {
+    const payload = storageService.verifySignedDownloadToken(req.query.token);
+    const tokenAssetId = payload.assetId || payload.a;
+    if (tokenAssetId !== req.params.id) {
+      throw new UnauthenticatedError('Download token asset identifier mismatch.', 'TOKEN_ASSET_MISMATCH');
+    }
+    effectiveUserId = payload.userId || payload.u;
+  } else if (req.user && req.user._id) {
+    // 2. Fall back to authenticated session user
+    effectiveUserId = req.user._id;
+  } else {
+    throw new UnauthenticatedError(
+      'Authentication or signed download token is required to access asset.',
+      'UNAUTHENTICATED'
+    );
+  }
+
+  // 3. Fetch asset with ownership check
+  const asset = await assetService.getAssetById(req.params.id, effectiveUserId);
+
+  // 4. Verify binary has not been purged
+  if (asset.hasBinaryPurged) {
+    throw new GoneError(
+      'The physical binary for this asset has been purged according to retention policy.',
+      'BINARY_PURGED'
+    );
+  }
+
+  // 5. Verify physical storage file exists
+  const safeDiskPath = storageService.resolveSafeStoragePath(asset.storageKey);
+  if (!fs.existsSync(safeDiskPath)) {
+    throw new NotFoundError('Asset binary file could not be found on storage.', 'FILE_NOT_FOUND');
+  }
+
+  // 6. Set streaming headers
+  const isAttachment = req.query.download === 'true';
+  const disposition = isAttachment ? 'attachment' : 'inline';
+  const encodedFilename = encodeURIComponent(asset.sanitizedName);
+
+  res.setHeader('Content-Type', asset.mimeType || 'application/octet-stream');
+  res.setHeader('Content-Length', asset.sizeBytes);
+  res.setHeader(
+    'Content-Disposition',
+    `${disposition}; filename="${encodedFilename}"; filename*=UTF-8''${encodedFilename}`
+  );
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Cache-Control', 'private, no-transform, max-age=3600');
+
+  // 7. Stream file to response
+  const readStream = storageService.createReadStream(asset.storageKey);
+  readStream.on('error', (err) => {
+    logger.error(`[assetController] Stream error while serving asset ${asset._id}:`, { error: err.message });
+    if (!res.headersSent) {
+      res.status(500).end();
+    }
+  });
+
+  readStream.pipe(res);
 });

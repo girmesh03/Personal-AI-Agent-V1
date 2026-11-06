@@ -92,6 +92,20 @@ export class ConflictError extends AppError {
 }
 
 /**
+ * 410 Gone Error.
+ * Thrown when a resource has been permanently purged or expired (e.g. physical binary purge).
+ */
+export class GoneError extends AppError {
+  constructor(
+    message = 'The requested resource has been permanently removed or purged.',
+    errorCode = 'GONE',
+    details = null
+  ) {
+    super(message, HTTP_STATUS.GONE, errorCode, details);
+  }
+}
+
+/**
  * 422 Unprocessable Entity / Validation Error.
  * Thrown when request body fails semantic validation rules.
  */

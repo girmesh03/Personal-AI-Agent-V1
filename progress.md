@@ -58,7 +58,7 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
 ### Phase 3: Private Asset and Document Foundation
 - **Status:** in_progress
 - **Branch:** `phase-3-assets-and-documents` (branched from `main` at `1f94414`)
-- **Current Task:** Task 3.5 — Private Signed Download and Asset Lifecycle Reconciliation
+- **Current Task:** Task 3.6 — Asset and Document API Test Suite & Phase 3 Consolidation
 - **Completed Tasks:**
   - **Task 3.1 — Private Object Storage Abstraction & Unified Asset Model:**
     - Defined `ASSET_CONSTANTS` in `backend/src/utils/constants.js`.
@@ -83,6 +83,13 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
     - Implemented durable citation and grounding service (`modules/documents/provenance/citationService.js`): generates immutable citations binding to source checksum, location, and snippet with verification (`POST /api/v1/assets/:id/citations`).
     - Implemented representation endpoints (`GET /api/v1/assets/:id/representations`, `GET /api/v1/assets/:id/representations/:type`) and cascading soft-deletion.
     - Verified with 7/7 tests passing in `tests/api/asset-provenance.test.js`.
+  - **Task 3.5 — Private Signed Download & Asset Lifecycle Reconciliation:**
+    - Implemented `GET /api/v1/assets/:id/token` generating HMAC-SHA256 short-lived download tokens.
+    - Implemented `GET /api/v1/assets/:id/download` with dual authentication: signed token query parameter (`?token=...`) with timing-safe comparison, or active session fallback via `optionalUser`.
+    - Enforced 410 Gone (`BINARY_PURGED`) on purged asset binary downloads, distinguishing permanently purged files while preserving derived text for conversational reasoning (Scenario M).
+    - Enforced strict user isolation (`NFR-SEC-004`) returning uniform 404 `NOT_FOUND` on foreign asset downloads.
+    - Implemented background reconciliation service (`modules/assets/lifecycle/assetReconciliationService.js`): `reconcileExpiredAssets()` sweeps expired ephemeral files; `reconcileOrphanedTempFiles()` sweeps abandoned staging chunks (Scenario O).
+    - Verified with 15/15 tests passing in `tests/api/asset-download-lifecycle.test.js`.
   - **Full Codebase Consistency Audit & Performance Engineering:**
     - Audited every single backend, route, model, controller, middleware, and test file line by line.
     - Standardized all controllers (`authController`, `profileController`, `assetController`) with `asyncHandler`.
@@ -90,7 +97,7 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
     - Added missing bridges: `controllers/assetController.js`, `routes/assetRoutes.js`, `services/assetService.js`, and directory aliases `modules/identity/persistence/` and `modules/assets/domain/`.
     - Fixed `Session.deleteMany({ userId })` field invariant.
     - Removed redundant route-level CSRF in `assetRoutes.js`.
-    - Added granular test scripts to `package.json` and optimized test execution via `--import ./tests/setup.js` (111/111 tests passing in 87s).
+    - Added granular test scripts to `package.json` and optimized test execution via `--import ./tests/setup.js` (126/126 tests passing in 100s).
 - **Completed Tasks:**
   - **Task 2.1 — Database Connection & Identity/Session Models:** Implemented MongoDB lifecycle engine, base schema options, User domain model with bcrypt password hashing, Session registry with token rotation and breach detection, AuthIdentity model, and integration test suite (`tests/api/identity-models.test.js`). Approved and committed on `phase-2-identity-and-sessions` (commit `f6a5a2a`).
   - **Task 2.2 — Authentication Service, Controllers, and Google OAuth 2.0:** Implemented token service, Zod request validation middleware, auth schemas, name derivation, Google OAuth 2.0 with HMAC signed state parameter, auth service, auth controller, auth routes, and native HTTP integration test suite (`tests/api/auth.test.js`). Approved and committed on `phase-2-identity-and-sessions` (commit `4dfeb59`).
@@ -261,7 +268,8 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
 | Multipart Upload Pipeline | `npm run test:upload` | 20 passed | 20/20 passed in 24.8s | PASS |
 | Document Parser Tests | `npm run test:parser` | 12 passed | 12/12 passed in 16.9s | PASS |
 | Asset Provenance Tests | `npm run test:provenance` | 7 passed | 7/7 passed in 40.2s | PASS |
-| Full API Test Suite | `npm run test:api` | 111 passed | 111/111 passed in 87.4s | PASS |
+| Asset Download & Lifecycle | `npm run test:download` | 15 passed | 15/15 passed in 34.2s | PASS |
+| Full API Test Suite | `npm run test:api` | 126 passed | 126/126 passed in 100.4s | PASS |
 | Quality Verification | `npm run verify` | Lint & Build pass | 0 lint errors, 1,513 client modules built | PASS |
 | Client Dist Cleanup | `npm run clean:client` | Clean client/dist/ | Clean working tree | PASS |
 
@@ -274,12 +282,14 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
 | 2026-11-06T20:28 | Mongoose CastError on representations.preview | 1 | Changed representations.preview to mongoose.Schema.Types.Mixed in Asset.js |
 | 2026-11-06T21:00 | Engine mapping for markdown document returned generic-parser | 1 | Added 'markdown': 'plain-text' to engineMap in assetService.js |
 | 2026-11-06T21:01 | getAssetById returned soft-deleted asset | 1 | Added isDeleted: false default filter to getAssetById in assetService.js |
+| 2026-11-06T21:15 | verifySignedDownloadToken returned assetId instead of payload.a | 1 | Mapped payload.assetId || payload.a and payload.userId || payload.u in downloadAsset |
+| 2026-11-06T21:16 | reconcileExpiredAssets checked ephemeral only | 1 | Added ephemeral to constants.RETENTION_POLICIES and used $in: ['temporary', 'ephemeral'] |
 
 ## 5-Question Reboot Check
 | Question | Answer |
 |----------|--------|
-| Where am I? | Phase 3: Private Asset and Document Foundation, Task 3.4 Complete & Verified |
-| Where am I going? | Task 3.5: Private signed download and asset lifecycle reconciliation |
+| Where am I? | Phase 3: Private Asset and Document Foundation, Task 3.5 Complete & Verified |
+| Where am I going? | Task 3.6: Asset and document API tests and Phase 3 consolidation |
 | What's the goal? | Implement Personal AI Agent V1 (Operon) per master specification with full functionality preservation, correct architecture, and owner review gates |
-| What have I learned? | Derived representations must maintain cryptographic binding to raw asset checksum. Binary purge allows temporary binary reclamation without losing conversational context (Scenario M). 111/111 tests passing across 10 suites. |
-| What have I done? | Implemented Task 3.4: AssetRepresentation model, citationService.js, purgeAssetBinary, citation generation, representation endpoints, cascading soft delete, asset-provenance.test.js (7/7 passed), 111/111 full regression suite passing, verify passing. |
+| What have I learned? | Private signed download tokens allow secure media streaming without exposing session cookies or static public endpoints. Background reconciliation safely reclaims storage without losing conversation grounding. 126/126 tests passing across 11 suites. |
+| What have I done? | Implemented Task 3.5: getDownloadToken, downloadAsset streaming endpoint, GoneError (HTTP 410 BINARY_PURGED), assetReconciliationService.js (expired asset sweeper & orphaned temp file sweeper), asset-download-lifecycle.test.js (15/15 passed), 126/126 full regression suite passing, verify passing. |

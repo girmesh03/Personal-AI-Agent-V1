@@ -4,14 +4,26 @@
  */
 
 import { Router } from 'express';
-import { requireUser } from '../../../infrastructure/http/middleware/requireUser.js';
+import { requireUser, optionalUser } from '../../../infrastructure/http/middleware/requireUser.js';
 import { uploadMultipleAssets } from './uploadMiddleware.js';
 import * as assetController from './assetController.js';
 
 const router = Router();
 
-// Enforce authentication on all asset endpoints
+/**
+ * @route GET /api/v1/assets/:id/download
+ * @desc Download raw private asset binary via HMAC signed token (?token=...) or active session
+ */
+router.get('/:id/download', optionalUser, assetController.downloadAsset);
+
+// Enforce session authentication on all management endpoints
 router.use(requireUser);
+
+/**
+ * @route GET /api/v1/assets/:id/token
+ * @desc Generate an authenticated, short-lived signed download token
+ */
+router.get('/:id/token', assetController.getDownloadToken);
 
 /**
  * @route POST /api/v1/assets/upload

@@ -307,3 +307,27 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
   - `POST /api/v1/assets/:id/citations`: Creates an immutable citation.
   - All endpoints enforce strict user isolation: foreign or unauthorized requests receive uniform 404 `NOT_FOUND`.
   - Cascading soft-delete: deleting an asset marks both the `Asset` and all its `AssetRepresentation` documents as `isDeleted: true`.
+
+## 20. Private Signed Download & Asset Lifecycle Reconciliation (Task 3.5)
+- **Zero Static Public Exposure & Token-Governed Streaming Access (`FR-CORE-DOC-003`):**
+  - Public static upload serving (`express.static('/uploads')`) remains strictly absent from the application composition.
+  - Implemented `GET /api/v1/assets/:id/token`:
+    - Issues an HMAC-SHA256 signed download token encoding `{ assetId, userId, expiresAt }`.
+    - Protected by `requireUser` and user ownership validation (`assertUserOwnership`).
+    - Configurable short-lived expiration (default 15 minutes, capped at 1 hour).
+  - Implemented `GET /api/v1/assets/:id/download`:
+    - Validates access via either:
+      1. Signed HMAC token parameter (`?token=...`), verified with timing-safe comparison (`crypto.timingSafeEqual`) without requiring session cookies (ideal for embedded `<img src="..." />` tags or preview windows).
+      2. Active session Bearer header or cookies via `optionalUser` fallback.
+    - Directly streams private disk binary using `storageService.createReadStream`.
+    - Emits defensive headers: `Content-Type`, `Content-Length`, `Content-Disposition` (inline or attachment), `X-Content-Type-Options: nosniff`, and `Cache-Control: private, no-transform`.
+- **410 Gone on Purged Binaries (Scenario M):**
+  - If physical storage binary has been purged via lifecycle or user action (`hasBinaryPurged: true`), both the token generator and download endpoint return HTTP 410 `GONE` with error code `BINARY_PURGED`.
+  - Distinguishes permanently purged binaries from missing resources, while preserving derived text for conversational context.
+- **Background Lifecycle Sweeper & Reconciliation Engine (`modules/assets/lifecycle/assetReconciliationService.js`):**
+  - `reconcileExpiredAssets()`:
+    - Scans for expired ephemeral/temporary assets (`expiresAt <= now` and `hasBinaryPurged: false`).
+    - Purges raw physical storage files from disk while preserving the `Asset` metadata document and derived representations.
+  - `reconcileOrphanedTempFiles(maxAgeMs)`:
+    - Sweeps staging directory (`storage/private/temp`) for abandoned upload chunks older than threshold (default 1 hour) left by aborted or crashed multipart uploads (`Scenario O`).
+    - Safely reclaims storage capacity with zero risk to verified persistent assets.

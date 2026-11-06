@@ -26,6 +26,7 @@ export const HTTP_STATUS = Object.freeze({
   FORBIDDEN: 403,
   NOT_FOUND: 404,
   CONFLICT: 409,
+  GONE: 410,
   UNPROCESSABLE_ENTITY: 422,
   TOO_MANY_REQUESTS: 429,
   INTERNAL_SERVER_ERROR: 500,
@@ -243,7 +244,7 @@ export const ASSET_CONSTANTS = Object.freeze({
   DEFAULT_STORAGE_PROVIDER: 'local_disk',
   CATEGORIES: Object.freeze(['document', 'image', 'audio', 'video', 'archive', 'other']),
   STATUSES: Object.freeze(['uploading', 'ready', 'processing', 'failed', 'deleted']),
-  RETENTION_POLICIES: Object.freeze(['temporary', 'persistent']),
+  RETENTION_POLICIES: Object.freeze(['temporary', 'ephemeral', 'persistent']),
   MAX_FILE_SIZE_BYTES: 50 * 1024 * 1024, // 50MB general limit
   MAX_BATCH_FILES: 5,
   MAX_BATCH_SIZE_BYTES: 50 * 1024 * 1024, // 50MB cumulative batch limit
