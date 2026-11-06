@@ -6,10 +6,10 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
 Deliver a fully verified, production-grade Personal AI Agent V1 with provider-neutral LangChain/LangGraph architecture, single root package manifest, protected MUI theme, durable multimodal chat lifecycle, Postman-style backend API integration test suite, and complete functionality preservation across all 214 historical V0 source sections.
 
 ## Next Step
-Initialize Phase 2: Identity, Sessions, and Account Security on dedicated phase branch `phase-2-identity-and-sessions`.
+Implement Task 2.2: Authentication service and controllers (`authService.js`, `authController.js`) covering registration, login, token refresh rotation, logout, `getMe`/`getProfile`, and Google OAuth 2.0 with HMAC state validation.
 
 ## Current Phase
-Phase 2: Identity, Sessions, and Account Security - pending
+Phase 2: Identity, Sessions, and Account Security - in_progress
 
 ## Phases
 
@@ -35,17 +35,17 @@ Phase 2: Identity, Sessions, and Account Security - pending
 - [x] Task 1.4: Base Express application bootstrap (`backend/src/app.js`, `server.js`) with environment validation and health check (Completed & Verified)
 - [x] Task 1.5: Native Postman-style HTTP integration test harness (`tests/api/health.test.js`) (Completed & Verified)
 - [x] Task 1.6: Client Vite/React 19 build validation using root dependencies and existing theme (Verified)
-- [x] Phase 1 Gate & Owner Merge Review (Approved & Merged)
+- [x] Phase 1 Gate & Owner Merge Review (Approved & Merged in 6c4b80d)
 - **Status:** complete
 
 ### Phase 2: Identity, Sessions, and Account Security
-- [ ] Task 2.1: User, AuthIdentity, and Session models with secure refresh token rotation
-- [ ] Task 2.2: Email/password authentication and Google OAuth 2.0 with signed state validation
+- [x] Task 2.1: Database connection lifecycle, schema options, User, AuthIdentity, and Session models with secure refresh token rotation (Committed)
+- [/] Task 2.2: Email/password authentication, password hashing, and Google OAuth 2.0 with signed state validation (In Progress)
 - [ ] Task 2.3: Session middleware (`requireUser`), CSRF protection, and rate limiting
 - [ ] Task 2.4: Credential envelope encryption service for BYOK provider credentials
 - [ ] Task 2.5: Identity and session API tests
 - [ ] Phase 2 Gate & Owner Merge Review
-- **Status:** pending
+- **Status:** in_progress
 
 ### Phase 3: Private Asset and Document Foundation
 - [ ] Task 3.1: Private object storage abstraction and asset metadata models

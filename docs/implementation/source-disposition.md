@@ -15,10 +15,10 @@
 |---:|:---|:---|:---|:---|
 | 1 | `backend/src/app.js` | `backend/src/app.js` | Express 5 composition, security headers, exact CORS, middleware pipeline, private upload routing (remove public static upload serving). | Implemented (Phase 1) |
 | 2 | `backend/src/server.js` | `backend/src/server.js` | Bootstrap, DB readiness, worker startup, SIGTERM/SIGINT signal handling, stream/job drain, graceful shutdown. | Implemented (Phase 1) |
-| 3 | `backend/src/config/db.js` | `backend/src/infrastructure/database/connection.js` | Mongoose/Mongo connection lifecycle, pool management, worker and checkpointer connection sharing. | Pending |
+| 3 | `backend/src/config/db.js` | `backend/src/infrastructure/database/connection.js` | Mongoose/Mongo connection lifecycle, pool management, worker and checkpointer connection sharing. | Implemented (Phase 2) |
 | 4 | `backend/src/config/env.js` | `backend/src/config/env.js` | Zod schema-based environment validation; parsing URLs, booleans, secrets, limits; fail closed. | Implemented (Phase 1) |
 | 5 | `backend/src/config/logger.js` | `backend/src/config/logger.js` | Structured Winston logging, request correlation IDs, secret/prompt redaction; no plaintext credentials. | Implemented (Phase 1) |
-| 6 | `backend/src/config/schemaOptions.js` | `backend/src/infrastructure/database/schemaOptions.js` | Shared serialization options (virtuals, getters, timestamps); safe projection rules. | Pending |
+| 6 | `backend/src/config/schemaOptions.js` | `backend/src/infrastructure/database/schemaOptions.js` | Shared serialization options (virtuals, getters, timestamps); safe projection rules. | Implemented (Phase 2) |
 | 7 | `backend/src/errors/CustomError.js` | `backend/src/shared/errors/AppError.js` | Typed application errors, normalized public HTTP error codes, security-safe error sanitization. | Implemented (Phase 1) |
 | 8 | `backend/src/middleware/authMiddleware.js` | `backend/src/infrastructure/http/middleware/requireUser.js` | Server-derived user identity, session validation, cookie parsing; reject client owner claims. | Pending |
 | 9 | `backend/src/middleware/errorHandler.js` | `backend/src/infrastructure/http/middleware/errorHandler.js` | Central error mapping, request correlation, safe client-facing errors without stack traces. | Implemented (Phase 1) |
@@ -60,7 +60,7 @@
 | 52 | `backend/src/models/Branch.js` | `backend/src/modules/operations/branches/persistence/Branch.js` | Branch schema and indices under operations module. | Pending |
 | 53 | `backend/src/models/Chat.js` | Replaced by `Thread.js`, `Turn.js`, `Message.js`, `MessageBranch.js` | Deconstructed conversation persistence models (no unbounded message arrays). | Pending |
 | 54 | `backend/src/models/Report.js` | `backend/src/modules/operations/reports/persistence/Report.js` | Operational inspection report schema and indices under operations module. | Pending |
-| 55 | `backend/src/models/User.js` | Split: `User.js`, `AuthIdentity.js`, `Session.js`, `ProviderConnection.js` | Normalized user identity, authentication identities, sessions, and encrypted BYOK keys. | Pending |
+| 55 | `backend/src/models/User.js` | Split: `User.js`, `AuthIdentity.js`, `Session.js`, `ProviderConnection.js` | Normalized user identity, authentication identities, sessions, and encrypted BYOK keys. | Implemented (Phase 2, Task 2.1) |
 | 56 | `backend/src/tools/agentTools.js` | Split: `modules/agent/tools/registry.js`, `core/*`, `operations/*` | Modular tool definitions with Zod schemas, runtime context, and HITL gates. | Pending |
 | 57 | `backend/src/validations/authValidation.js` | `backend/src/modules/identity/http/authSchemas.js` | Zod validation schemas for auth endpoints. | Pending |
 | 58 | `backend/src/validations/branchValidation.js` | `backend/src/modules/operations/branches/http/branchSchemas.js` | Zod validation schemas for branch endpoints. | Pending |

@@ -33,8 +33,8 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
 
 ### Phase 1: Root Foundation & Engineering Quality System
 - **Status:** complete
-- **Branch:** `phase-1-foundation` -> merged to `main`
-- **Current Task:** Phase 1 Complete (Merged to `main`)
+- **Branch:** `phase-1-foundation` -> merged to `main` (`6c4b80d`)
+- **Current Task:** Phase 1 Complete (Merged to `main` & Synced to `origin/main`)
 - **Completed Tasks:**
   - **Task 1.1 — Root Manifest Consolidation & Dependency Architecture:** Accepted & committed in `6df8fb3`.
   - **Task 1.2 — Root Package Scripts & Port Management:** Verified (`cleanDist.js`, `killPort.js`, `verify`, `test:api`).
@@ -43,6 +43,65 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
   - **Task 1.5 — Native Postman-Style HTTP Integration Test Harness:** Implemented `tests/api/health.test.js` (6 canonical test cases passing).
   - **Task 1.6 — Client Build & Protected Theme Validation:** Verified via `npm run verify` (0 lint errors, 1513 modules built).
   - **Phase 1 Gate & Owner Merge Review:** Approved by owner; merged to `main`.
+
+### Phase 2: Identity, Sessions, and Account Security
+- **Status:** in_progress
+- **Branch:** `phase-2-identity-and-sessions` (branched from `main` at `6c4b80d`)
+- **Current Task:** Task 2.2 — Authentication Service, Controllers, and Google OAuth 2.0 (In Progress)
+- **Completed Tasks:**
+  - **Task 2.1 — Database Connection & Identity/Session Models:** Implemented MongoDB lifecycle engine, base schema options, User domain model with bcrypt password hashing, Session registry with token rotation and breach detection, AuthIdentity model, and integration test suite (`tests/api/identity-models.test.js`). Approved and committed on `phase-2-identity-and-sessions`.
+- Actions taken:
+  - Created dedicated phase branch `phase-2-identity-and-sessions`.
+  - Created `backend/src/infrastructure/database/schemaOptions.js` (`BASE_SCHEMA_OPTIONS`, `SUBDOCUMENT_SCHEMA_OPTIONS`) and `backend/src/config/schemaOptions.js` compatibility bridge.
+  - Created `backend/src/infrastructure/database/connection.js` with exponential backoff, jitter, `isDbConnected()`, and `getDbStatus()`.
+  - Created `backend/src/config/db.js` compatibility bridge.
+  - Updated `backend/src/infrastructure/http/routes.js` and `backend/src/app.js` health endpoints to report app and database status.
+  - Extended `backend/src/utils/constants.js` with password regex, salt rounds, JWT expiry, cookie max age, user boundaries, and avatar bounds.
+  - Created `backend/src/modules/identity/domain/User.js` with bcrypt pre-save hashing, `comparePassword()`, `fullName` virtual, and secret sanitization in `toJSON`.
+  - Created `backend/src/models/User.js` compatibility bridge.
+  - Created `backend/src/modules/identity/domain/Session.js` with SHA-256 token hashing, family rotation lineage, automatic TTL expiration, and replay attack breach detection.
+  - Created `backend/src/models/Session.js` compatibility bridge.
+  - Created `backend/src/modules/identity/domain/AuthIdentity.js` for external provider identity linking (Google SSO).
+  - Created `backend/src/models/AuthIdentity.js` compatibility bridge.
+  - Created `tests/api/identity-models.test.js` validating MongoDB connection, user creation, password hashing/comparison, `toJSON` secret sanitization, session rotation family lineage, replay attack detection, and Google identity linking.
+  - Executed `npm run test:api` -> 13/13 tests passed across 2 test suites.
+  - Executed `npm run verify` (`npm run lint && npm run build:web`) -> 0 errors.
+  - Executed `npm run clean:client` -> working tree preserved.
+- Files created/modified:
+  - `backend/src/infrastructure/database/schemaOptions.js`
+  - `backend/src/config/schemaOptions.js`
+  - `backend/src/infrastructure/database/connection.js`
+  - `backend/src/config/db.js`
+  - `backend/src/modules/identity/domain/User.js`
+  - `backend/src/models/User.js`
+  - `backend/src/modules/identity/domain/Session.js`
+  - `backend/src/models/Session.js`
+  - `backend/src/modules/identity/domain/AuthIdentity.js`
+  - `backend/src/models/AuthIdentity.js`
+  - `backend/src/utils/constants.js`
+  - `backend/src/infrastructure/http/routes.js`
+  - `backend/src/app.js`
+  - `tests/api/identity-models.test.js`
+  - `tests/api/health.test.js`
+  - `docs/implementation/source-disposition.md`
+  - `task_plan.md`
+  - `progress.md`
+
+## Test Results
+| Test | Command / Input | Expected | Actual | Status |
+|------|-----------------|----------|--------|--------|
+| API Health Tests | `npm run test:api` (health) | 6 passed | 6 passed | PASS |
+| Identity & Session Integration Tests | `npm run test:api` (identity) | 7 passed | 7 passed | PASS |
+| Full Test Suite | `npm run test:api` (all) | 13 passed, 0 failed | 13/13 passed | PASS |
+| ESLint Static Analysis | `npm run lint` | 0 errors | 0 errors across client | PASS |
+| Vite Production Build | `npm run build:web` | Successful bundle | 1513 modules transformed | PASS |
+| Full Quality Check | `npm run verify` | Lint & Build pass | Clean pass | PASS |
+| Client Dist Cleanup | `npm run clean:client` | Clean client/dist/ | Cleaned working tree | PASS |
+| MongoDB Live Connection | `connectDB()` | Atlas connected | Connected to Atlas shard | PASS |
+| Password Hashing | `bcrypt.compare()` | True for match, False for mismatch | Validated | PASS |
+| Secret Sanitization | `user.toJSON()` | Secrets stripped | Password, keys, tokens stripped | PASS |
+| Session Family Rotation | `rotateSession()` | Preserves family | Preserved family lineage | PASS |
+| Token Replay Breach Detection | `validateSession(reusedToken)` | Throws TOKEN_REUSE_DETECTED | Revoked entire session family | PASS |
 - Actions taken:
   - Installed devDependencies for TypeScript declarations: `@types/node`, `@types/express`, `@types/morgan`, `@types/cors`, `@types/cookie-parser`, `@types/jsonwebtoken`, `@types/bcryptjs`, `@types/multer` via native `npm install -D`.
   - Created root `jsconfig.json` with NodeNext module resolution.

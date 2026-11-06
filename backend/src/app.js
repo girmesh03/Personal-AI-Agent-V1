@@ -13,6 +13,7 @@ import { logStream } from './config/logger.js';
 import { notFoundHandler } from './infrastructure/http/middleware/notFoundHandler.js';
 import { errorHandler } from './infrastructure/http/middleware/errorHandler.js';
 import { HTTP_STATUS } from './utils/constants.js';
+import { isDbConnected, getDbStatus } from './infrastructure/database/connection.js';
 import apiV1Routes from './infrastructure/http/routes.js';
 
 const app = express();
@@ -75,6 +76,8 @@ if (env.NODE_ENV === 'production') {
 app.get(['/health', '/api/health', '/api/v1/health'], (_req, res) => {
   res.status(HTTP_STATUS.OK).json({
     status: 'UP',
+    database: isDbConnected() ? 'CONNECTED' : 'DISCONNECTED',
+    dbState: getDbStatus(),
     timestamp: new Date().toISOString(),
     uptime: Math.round(process.uptime()),
     environment: env.NODE_ENV,

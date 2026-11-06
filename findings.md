@@ -103,3 +103,18 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
 ## 9. Phase 1 Completion & Gate Merge Review
 - **Deliverables:** Single root manifest and lockfile, consolidated dependencies, build and lint pipelines, base Express 5 app, Zod environment validation, operational error handling, Winston structured logging, native API health test suite, and cloud deployment manifests (`render.yaml`, `vercel.json`).
 - **Gate Status:** 100% verified and approved by owner. Merged to `main` via fast-forward merge. Ready for Phase 2 initialization.
+
+## 10. Phase 2 Identity & Session Security Architecture (Task 2.1)
+- **Database Connection Engine (`infrastructure/database/connection.js`):**
+  - Exponential backoff (1s -> 2s -> 4s -> ... up to 30s) with 10% random jitter.
+  - Exposes `isDbConnected()` and `getDbStatus()` allowing `/health` and `/api/v1/health` probes to distinguish HTTP service health from database readiness.
+- **Session Registry & Breach Detection (`modules/identity/domain/Session.js`):**
+  - **No Plaintext Tokens:** Refresh tokens are hashed via SHA-256 before persistence.
+  - **Family Lineage:** Each login establishes a unique `family` UUID. When rotating a token (`rotateSession`), the old session is marked revoked, and the new session inherits the same family.
+  - **Replay / Breach Detection:** If a client presents an already revoked refresh token (indicating token theft / interception), the engine revokes *all* active sessions in that family immediately and throws `UnauthenticatedError('... TOKEN_REUSE_DETECTED')`.
+  - **TTL Expiration:** MongoDB TTL index automatically cleans up expired sessions without needing manual cron jobs.
+- **User Domain Model (`modules/identity/domain/User.js`):**
+  - Password hashed using `bcryptjs` with 12 salt rounds in an async pre-save hook.
+  - Safe serialization: `toJSON` strips password, third-party integration tokens (Google Drive access/refresh tokens, Telegram botToken), and raw API keys, while projecting boolean capability flags (`hasGeminiKey`, `hasAddisKey`).
+- **External Provider Linking (`modules/identity/domain/AuthIdentity.js`):**
+  - Normalizes external OAuth identities with compound unique index on `{ provider: 1, providerId: 1 }`.

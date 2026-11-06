@@ -36,6 +36,8 @@ describe('API Health and Bootstrap Integration Tests', () => {
 
     const body = await res.json();
     assert.equal(body.status, 'UP');
+    assert.ok(typeof body.database === 'string');
+    assert.ok(typeof body.dbState === 'string');
     assert.ok(typeof body.uptime === 'number');
     assert.ok(typeof body.environment === 'string');
     assert.ok(!Number.isNaN(Date.parse(body.timestamp)));

@@ -5,6 +5,7 @@
 
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { env, parseDurationToMs } from '../config/env.js';
 
 const BACKEND_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 
@@ -129,3 +130,106 @@ export const formatSttEngineDisplayName = (engine) => {
   if (AI_MODEL_LABELS[engine]) return AI_MODEL_LABELS[engine];
   return engine;
 };
+
+/**
+ * Password validation regex enforcing at least 8 characters,
+ * 1 uppercase letter, 1 lowercase letter, 1 number, and 1 special character.
+ * @constant
+ * @type {RegExp}
+ */
+export const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+
+/**
+ * Standard email validation regex format.
+ * @constant
+ * @type {RegExp}
+ */
+export const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/**
+ * Name length boundaries for user profiles.
+ * @constant
+ * @type {Readonly<{ MIN: number, MAX: number }>}
+ */
+export const USER_NAME_LENGTH = Object.freeze({
+  MIN: 2,
+  MAX: 50,
+});
+
+/**
+ * Minimum password length requirement.
+ * @constant
+ * @type {number}
+ */
+export const PASSWORD_MIN_LENGTH = 8;
+
+/**
+ * Bcrypt salt rounds factor for password hashing.
+ * @constant
+ * @type {number}
+ */
+export const BCRYPT_SALT_ROUNDS = 12;
+
+/**
+ * JWT token lifespan configuration referencing validated environment variables.
+ * @constant
+ * @type {Readonly<{ ACCESS: string, REFRESH: string }>}
+ */
+export const JWT_EXPIRY = Object.freeze({
+  ACCESS: env.JWT_ACCESS_EXPIRES_IN,
+  REFRESH: env.JWT_REFRESH_EXPIRES_IN,
+});
+
+/**
+ * HTTP cookie maximum age in milliseconds derived directly from JWT expiration settings.
+ * @constant
+ * @type {Readonly<{ ACCESS: number, REFRESH: number }>}
+ */
+export const COOKIE_MAX_AGE = Object.freeze({
+  ACCESS: parseDurationToMs(env.JWT_ACCESS_EXPIRES_IN, 15 * 60 * 1000),
+  REFRESH: parseDurationToMs(env.JWT_REFRESH_EXPIRES_IN, 7 * 24 * 60 * 60 * 1000),
+});
+
+/**
+ * Default corporate/profile position title.
+ * @constant
+ * @type {string}
+ */
+export const DEFAULT_POSITION = 'Area Supervisor';
+
+/**
+ * User avatar image constants and MIME whitelist.
+ * @constant
+ * @type {Readonly<{
+ *   MAX_FILE_SIZE_BYTES: number,
+ *   ALLOWED_EXTENSIONS: string[],
+ *   ALLOWED_MIME_TYPES: string[],
+ * }>}
+ */
+export const AVATAR_CONSTANTS = Object.freeze({
+  MAX_FILE_SIZE_BYTES: 5 * 1024 * 1024, // 5MB
+  ALLOWED_EXTENSIONS: ['.jpg', '.jpeg', '.png', '.webp'],
+  ALLOWED_MIME_TYPES: ['image/jpeg', 'image/png', 'image/webp'],
+});
+
+/**
+ * Default chat session and AI agent engine constants.
+ * @constant
+ */
+export const CHAT_CONSTANTS = Object.freeze({
+  DEFAULT_PERSONA:
+    'Personal AI Agent and Executive Operations Partner for multi-branch operations, professional leadership, and personal productivity.',
+  DEFAULT_MODEL: AI_MODELS.DEFAULT,
+  SUPPORTED_MODELS: AI_MODELS.SUPPORTED,
+  DEFAULT_THINKING_BUDGET: 2048,
+  MIN_THINKING_BUDGET: 0,
+  MAX_THINKING_BUDGET: 8192,
+  DEFAULT_LANGUAGE: 'am',
+  SUPPORTED_LANGUAGES: ['am', 'en', 'auto'],
+  DEFAULT_TEMPERATURE: 0.2,
+  STT_ENGINES: AI_MODELS.STT_ENGINES,
+  DEFAULT_STT_ENGINE: AI_MODELS.DEFAULT_STT_ENGINE,
+  TITLE_MAX_LENGTH: 100,
+  MAX_MESSAGE_LENGTH: 10000,
+});
+

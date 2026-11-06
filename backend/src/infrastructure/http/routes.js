@@ -6,6 +6,7 @@
 import { Router } from 'express';
 import { HTTP_STATUS } from '../../utils/constants.js';
 import { env } from '../../config/env.js';
+import { isDbConnected, getDbStatus } from '../database/connection.js';
 
 const router = Router();
 
@@ -16,6 +17,8 @@ const router = Router();
 router.get('/health', (_req, res) => {
   res.status(HTTP_STATUS.OK).json({
     status: 'UP',
+    database: isDbConnected() ? 'CONNECTED' : 'DISCONNECTED',
+    dbState: getDbStatus(),
     timestamp: new Date().toISOString(),
     uptime: Math.round(process.uptime()),
     environment: env.NODE_ENV,
