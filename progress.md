@@ -352,6 +352,9 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
 | 2026-11-07T02:00 | Populated activeBranchId vs string in conversation-suite test | 1 | Checked thread.activeBranchId?._id || thread.activeBranchId and String(branch2Id) |
 | 2026-11-07T02:01 | In-memory runLock cache retained in turnService.cancelTurn | 1 | Explicitly reset turn.runLock in-memory before turn.save() |
 | 2026-11-07T02:01 | Mongoose ObjectId vs String in assert.equal in conversation-suite | 1 | Assigned branch1Id as String and normalized comparison |
+| 2026-11-07T14:26 | Unconditional triple dotenv.config invocation in env.js | 1 | Resolved candidate paths with fs.existsSync and loaded once |
+| 2026-11-07T14:26 | Storage directory default located at monorepo root | 1 | Anchored STORAGE_LOCAL_ROOT to backend/storage/private (test: backend/storage/test) |
+| 2026-11-07T14:27 | Test files left orphaned on disk after test runs | 1 | Added automated storage teardown hooks in tests/setup.js and cleanTestStorage helper |
 
 ## 5-Question Reboot Check
 | Question | Answer |

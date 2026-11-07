@@ -3,6 +3,8 @@
 
 # uploads & private storage
 backend/uploads
+backend/storage
+backend/storage/
 /storage
 /storage/
 

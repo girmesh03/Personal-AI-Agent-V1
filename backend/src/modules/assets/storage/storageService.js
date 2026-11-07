@@ -28,13 +28,27 @@ export const getPrivateStorageRoot = () => {
     ? path.resolve(env.STORAGE_LOCAL_ROOT)
     : process.env.STORAGE_LOCAL_ROOT
     ? path.resolve(process.env.STORAGE_LOCAL_ROOT)
-    : path.resolve(process.cwd(), 'storage/private');
+    : path.resolve(process.cwd(), 'backend/storage/private');
 
   if (!fs.existsSync(root)) {
     fs.mkdirSync(root, { recursive: true });
   }
 
   return root;
+};
+
+/**
+ * Purges all files in the test storage root directory.
+ * Strict safety guard: only permitted when NODE_ENV === 'test'.
+ */
+export const cleanTestStorage = () => {
+  if (process.env.NODE_ENV !== 'test') {
+    throw new Error('cleanTestStorage is strictly prohibited outside of test environments');
+  }
+  const root = getPrivateStorageRoot();
+  if (fs.existsSync(root)) {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
 };
 
 /**

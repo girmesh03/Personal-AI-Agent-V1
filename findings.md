@@ -506,5 +506,21 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
    - `npm run test:conversation-suite`: 15/15 tests passing in 104.75s.
    - `npm run verify`: 0 lint errors, client builds cleanly in 5.23s.
 
+---
+
+## 27. Architectural Inquiries: Storage Placement, Test Teardown & Environment Loader
+
+### Findings & Resolutions
+1. **Private Storage Directory Placement:**
+   - **Finding:** The root directory of the repository is designated for workspace and project-level structure (Sections 15 and 17 of `docs/Master-Personal-AI-Agent-V1-documentation.md`). Placing `storage/` directly at the repository root was an artifact of `STORAGE_LOCAL_ROOT` defaulting to a relative string `'storage/private'` resolved against `process.cwd()`.
+   - **Resolution:** Storage is an internal subsystem of the backend. Default storage paths are now anchored to `backend/storage/private` (via `BACKEND_ROOT`), mirroring `UPLOADS_CONFIG.ROOT_DIR` in `backend/src/utils/constants.js`.
+2. **Automated Test File Teardown (Master Spec Section 26.7.2, Rule 12):**
+   - **Finding:** Section 26.7.2 Rule 12 dictates: *"Clean up only test-owned records and files."* Previous test runs purged MongoDB records via Mongoose teardown hooks but omitted physical file cleanup on disk, causing orphan test files to accumulate.
+   - **Resolution:** Test storage is now isolated to `backend/storage/test` during test execution (`NODE_ENV === 'test'`). Automated lifecycle cleanup handlers in `tests/setup.js` and `storageService.cleanTestStorage()` ensure that test files and directories are completely purged upon test startup and teardown, leaving zero orphaned files.
+3. **Environment Loader Triple Injection Deduplication:**
+   - **Finding:** `backend/src/config/env.js` executed three unconditional `dotenv.config(...)` calls targeting `backend/.env`, root `.env`, and `backend/.env` again, emitting three injection logs on every boot.
+   - **Resolution:** Replaced blind sequential calls with candidate path resolution verifying file existence (`fs.existsSync`) and calling `dotenv.config()` exactly once on the first valid file found. Injection logs now appear cleanly once.
+
+
 
 

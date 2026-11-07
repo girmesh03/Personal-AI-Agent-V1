@@ -3,18 +3,30 @@
  * @description Centralized, schema-validated, and deeply frozen environment configuration.
  */
 
-import dotenv from 'dotenv';
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import dotenv from 'dotenv';
 import { z } from 'zod';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const BACKEND_ROOT = path.resolve(__dirname, '../..');
 
-// Explicitly load .env from backend directory or workspace root
-dotenv.config({ path: path.resolve(__dirname, '../../.env') });
-dotenv.config({ path: path.resolve(process.cwd(), '.env') });
-dotenv.config({ path: path.resolve(process.cwd(), 'backend', '.env') });
+// Resolve and load authoritative .env file once (preventing redundant injection logs)
+const candidateEnvPaths = [
+  process.env.DOTENV_CONFIG_PATH,
+  path.resolve(BACKEND_ROOT, '.env'),
+  path.resolve(process.cwd(), 'backend', '.env'),
+  path.resolve(process.cwd(), '.env'),
+].filter(Boolean);
+
+for (const envPath of candidateEnvPaths) {
+  if (fs.existsSync(envPath)) {
+    dotenv.config({ path: envPath });
+    break;
+  }
+}
 
 /**
  * Parses a string duration (e.g. '15m', '7d', '24h', '60s') into milliseconds.
@@ -95,7 +107,9 @@ const envSchema = z.object({
 
   CREDENTIAL_ENCRYPTION_KEY: z.string().optional().default(''),
 
-  STORAGE_LOCAL_ROOT: z.string().default('storage/private'),
+  STORAGE_LOCAL_ROOT: isTestEnv
+    ? z.string().default(path.resolve(BACKEND_ROOT, 'storage/test'))
+    : z.string().default(path.resolve(BACKEND_ROOT, 'storage/private')),
 });
 
 // Resolve aliases and fallbacks
@@ -126,7 +140,11 @@ const rawConfig = {
   TELEGRAM_MAINTENANCE_CHAT_ID: process.env.TELEGRAM_MAINTENANCE_CHAT_ID,
   TELEGRAM_GENERAL_CHAT_ID: process.env.TELEGRAM_GENERAL_CHAT_ID,
   CREDENTIAL_ENCRYPTION_KEY: process.env.CREDENTIAL_ENCRYPTION_KEY,
-  STORAGE_LOCAL_ROOT: process.env.STORAGE_LOCAL_ROOT,
+  STORAGE_LOCAL_ROOT: process.env.STORAGE_LOCAL_ROOT
+    ? path.isAbsolute(process.env.STORAGE_LOCAL_ROOT)
+      ? process.env.STORAGE_LOCAL_ROOT
+      : path.resolve(BACKEND_ROOT, process.env.STORAGE_LOCAL_ROOT)
+    : undefined,
 };
 
 const parsedResult = envSchema.safeParse(rawConfig);
