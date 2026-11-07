@@ -103,9 +103,9 @@ Authoritative Reference: `docs/Master-Personal-AI-Agent-V1-documentation.md`
     - Added granular test scripts to `package.json` and optimized test execution via `--import ./tests/setup.js` (136/136 tests passing in 126s).
 
 ### Phase 4: Durable Threads, Turns, Messages, Events
-- **Status:** complete (awaiting owner merge authorization)
-- **Branch:** `phase-4-conversations` (branched from `main` at `94dcecf`)
-- **Current Task:** Phase 4 Gate Review & Merge Authorization
+- **Status:** complete
+- **Branch:** `phase-4-conversations` -> merged to `main` (commit `6b886a7`), pushed to `origin/main`, local branch closed.
+- **Current Task:** Phase 4 Complete & Merged to `main`
 - **Completed Tasks:**
   - **Task 4.1 — Thread, Turn, Message, and MessageBranch Persistence Models:**
     - Defined `CONVERSATION_CONSTANTS` in `backend/src/utils/constants.js`.

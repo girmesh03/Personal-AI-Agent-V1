@@ -12,12 +12,13 @@ process.env.NODE_ENV = 'test';
 
 const TESTS_DIR = path.dirname(fileURLToPath(import.meta.url));
 const BACKEND_ROOT = path.resolve(TESTS_DIR, '../backend');
-const TEST_STORAGE_ROOT = path.resolve(BACKEND_ROOT, 'storage/test');
+const TEST_STORAGE_BASE = path.resolve(BACKEND_ROOT, 'storage/test');
+const TEST_STORAGE_ROOT = path.resolve(TEST_STORAGE_BASE, String(process.pid));
 
-// Set test storage root explicitly
+// Set process-isolated test storage root explicitly
 process.env.STORAGE_LOCAL_ROOT = TEST_STORAGE_ROOT;
 
-// Clean test storage before starting tests to guarantee clean state
+// Clean process-isolated test storage before starting tests to guarantee clean state
 if (fs.existsSync(TEST_STORAGE_ROOT)) {
   try {
     fs.rmSync(TEST_STORAGE_ROOT, { recursive: true, force: true });
@@ -34,6 +35,17 @@ const cleanStorage = () => {
     } catch {
       // Ignore exit cleanup race
     }
+  }
+  // Prune parent test directory if all child process subdirectories are done
+  try {
+    if (fs.existsSync(TEST_STORAGE_BASE)) {
+      const remaining = fs.readdirSync(TEST_STORAGE_BASE);
+      if (remaining.length === 0) {
+        fs.rmSync(TEST_STORAGE_BASE, { recursive: true, force: true });
+      }
+    }
+  } catch {
+    // Ignore race across workers
   }
 };
 
