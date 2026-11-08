@@ -7,6 +7,7 @@
     "start": "node src/server.js",
     "dev": "node scripts/killPort.js 4000 && nodemon src/server.js",
     "verify": "node scripts/verifyCodebase.js",
+    "test": "node scripts/tests/health.test.js",
     "postinstall": "node scripts/installFonts.js"
   },
   "keywords": [],
