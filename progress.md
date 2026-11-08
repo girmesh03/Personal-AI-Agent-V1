@@ -10,14 +10,9 @@
 - **[2026-11-09 00:05]** Created baseline governance registers (`agents-skills-and-plugins-inventory.md`, `dependency-catalog.md`, `traceability.md`, `source-disposition.md`).
 - **[2026-11-09 00:09]** Presented Preflight Report (Stages A–K).
 - **[2026-11-09 00:10]** Owner approved Gate 1 (Preflight).
-- **[2026-11-09 00:11]** Implemented Task 1.1 foundational modules:
-  - `backend/src/utils/constants.js`
-  - `backend/src/config/env.js`
-  - `backend/src/config/logger.js`
-  - `backend/src/errors/AppError.js`
-  - `backend/src/utils/errorFormatter.js`
-- **[2026-11-09 00:37]** Removed `backend/src/utils/redact.js` (redaction logic encapsulated internally within `logger.js`).
-- **[2026-11-09 00:37]** Removed all ad-hoc test files from `backend/scripts/tests/` and reverted `package.json` scripts.
-- **[2026-11-09 00:39]** Removed `COOKIE_SECRET` and `MONGO_SERVER_SELECTION_TIMEOUT` from `backend/.env` and `backend/src/config/env.js`, strictly aligning with the specification in `docs/*` and the implementation plan.
-- **[2026-11-09 00:40]** Reset `TIMEOUTS.SERVER_SELECTION_MS = 5000` per Task 1.2 specifications.
-- **[2026-11-09 00:40]** Verified clean ESM module loading across all Task 1.1 modules.
+- **[2026-11-09 00:11]** Implemented Task 1.1 foundational modules.
+- **[2026-11-09 00:42]** Committed Task 1.1: `feat(core): establish backend core config, constants, logger and universal error hierarchy`.
+- **[2026-11-09 00:46]** Re-audited `docs/Backend-Personal-AI-Agent-V0-Codebase.md` Sections 3 and 6 and Master Specification Section 26:
+  - Aligned `backend/src/config/schemaOptions.js` with exact exports: `BASE_SCHEMA_OPTIONS`, `SUBDOCUMENT_SCHEMA_OPTIONS`, and `EMBEDDED_SCHEMA_OPTIONS` (enforcing `delete ret.id` and `delete ret.__v`).
+  - Aligned `backend/src/config/db.js` with exact `BACKOFF_CONFIG` (5 retries, exponential jittered backoff), `MONGO_OPTIONS` (`maxPoolSize: 10`, `serverSelectionTimeoutMS: 30000`, `socketTimeoutMS: 45000`), and eliminated the V0 recursive reconnect race inside `disconnected` listener.
+- **[2026-11-09 00:47]** Verified clean ESM module loading for both files.

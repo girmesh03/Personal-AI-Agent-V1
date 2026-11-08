@@ -13,8 +13,8 @@ Establish the authoritative monorepo foundation with Express 5 backend and React
 | Task ID | Description | Status | Verification Evidence | Owner Decision Gate |
 |---|---|---|---|---|
 | **Task 0** | Mandatory Deep Codebase Audit, Preflight Stages A–E, and Governance Registers | `complete` | Baseline registers created, Preflight Report (A–K) approved | **GATE 1: Preflight Approval [APPROVED]** |
-| **Task 1.1** | Backend Core Config, Constants, Logger & Universal Error Hierarchy | `in_progress` | 14/14 tests passing (`task1_1.verify.js`) | **Gate: Task Acceptance & Commit Auth [PENDING]** |
-| **Task 1.2** | Database Connection & Lifecycle Manager | `pending` | Atlas handshake & lifecycle test passing | Gate: Task Acceptance & Commit Auth |
+| **Task 1.1** | Backend Core Config, Constants, Logger & Universal Error Hierarchy | `complete` | Modules verified, clean ESM loading | Gate: Task Acceptance & Commit Auth [APPROVED] |
+| **Task 1.2** | Database Connection & Lifecycle Manager | `complete` | `db.js` & `schemaOptions.js` aligned with `docs/*` (Sections 3 & 6) | **Gate: Task Acceptance & Commit Auth [PENDING]** |
 | **Task 1.3** | Central Routing Architecture, Express 5 Composition & Health API | `pending` | Local curl / health ping status 200 | Gate: Task Acceptance & Commit Auth |
 | **Task 1.4** | Backend Quality Verification & Deterministic Postman-Style Test Suite | `pending` | `node backend/scripts/tests/health.test.js` passing | Gate: Task Acceptance & Commit Auth |
 | **Task 1.5** | Client Dependencies, Verification Script & Protected Theme Mounting in App.jsx | `pending` | `npm run verify --workspace=client` passing | Gate: Task Acceptance & Commit Auth |

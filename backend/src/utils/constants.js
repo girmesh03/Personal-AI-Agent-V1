@@ -30,7 +30,7 @@ export const ENVIRONMENTS = Object.freeze({
 export const API_PREFIX = '/api/v1';
 
 export const TIMEOUTS = Object.freeze({
-  SERVER_SELECTION_MS: 5000,
+  SERVER_SELECTION_MS: 30000,
   SOCKET_TIMEOUT_MS: 45000,
   SHUTDOWN_TIMEOUT_MS: 10000,
 });
