@@ -38,10 +38,17 @@ export function validateEnv(source = process.env) {
   }
 
   const clientOrigin = source.CLIENT_ORIGIN || 'http://localhost:3000';
-  try {
-    new URL(clientOrigin);
-  } catch {
-    errors.push(`Invalid CLIENT_ORIGIN "${clientOrigin}". Expected a valid URL.`);
+  const origins = clientOrigin.split(',').map((o) => o.trim()).filter(Boolean);
+  if (origins.length === 0) {
+    errors.push('CLIENT_ORIGIN must contain at least one valid origin URL.');
+  } else {
+    for (const origin of origins) {
+      try {
+        new URL(origin);
+      } catch {
+        errors.push(`Invalid CLIENT_ORIGIN "${origin}". Expected a valid URL.`);
+      }
+    }
   }
 
   const mongoUri = source.MONGO_URI ? source.MONGO_URI.trim() : '';

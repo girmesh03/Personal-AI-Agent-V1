@@ -4,7 +4,7 @@
  */
 import { alpha } from '@mui/material/styles';
 import { menuItemClasses } from '@mui/material/MenuItem';
-import { pickerDayClasses } from '@mui/x-date-pickers/PickerDay';
+import { pickersDayClasses as pickerDayClasses } from '@mui/x-date-pickers';
 import { gray, brand } from '../themePrimitives';
 
 /**

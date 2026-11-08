@@ -18,6 +18,11 @@ import { formatError } from '../utils/errorFormatter.js';
  * @returns {import('express').Response} Structured JSON error response.
  */
 export const errorHandler = (err, req, res, _next) => {
+  // If response headers were already sent (e.g. streaming AI response), delegate to default Express handler
+  if (res.headersSent) {
+    return _next(err);
+  }
+
   const { statusCode, payload, error } = formatError(err, req);
 
   // Log error based on severity level

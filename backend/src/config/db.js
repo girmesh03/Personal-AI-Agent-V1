@@ -78,6 +78,7 @@ export const connectDB = async () => {
     logger.error(`MongoDB initial connection failure (attempt ${retryAttempt}/${BACKOFF_CONFIG.MAX_RETRIES}): ${error.message}`);
 
     if (retryAttempt >= BACKOFF_CONFIG.MAX_RETRIES) {
+      retryAttempt = 0;
       logger.error('CRITICAL: Exhausted maximum MongoDB connection retries. Exiting process.');
       throw new Error(`Exhausted maximum MongoDB connection retries (${BACKOFF_CONFIG.MAX_RETRIES}): ${error.message}`);
     }

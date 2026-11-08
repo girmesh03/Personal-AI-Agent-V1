@@ -42,7 +42,6 @@ The Operon monorepo operates under root npm workspaces with isolated manifests, 
 ### Backend Dev Dependencies
 | Package Name | Exact Version | Purpose | License |
 |---|---|---|---|
-| `morgan` | `^1.12.1` | HTTP access request logging stream connected to Winston | MIT |
 | `nodemon` | `^3.1.14` | Local dev server hot-reloader | MIT |
 
 ---

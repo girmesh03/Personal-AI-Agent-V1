@@ -19,18 +19,21 @@ if (!targetArg) {
     ? fs.readdirSync(testsDir).filter((file) => file.endsWith('.test.js'))
     : [];
 
-  console.log('ℹ  Please specify an individual test to run.');
-  console.log('   Usage: npm test <test-name>  (e.g., npm test health)\n');
-  if (availableTests.length > 0) {
-    console.log('   Available tests in backend/scripts/tests/:');
-    availableTests.forEach((file) => {
-      const name = file.replace('.test.js', '');
-      console.log(`     • npm test ${name}  (or: node scripts/tests/${file})`);
-    });
-  } else {
-    console.log('   No .test.js files found in backend/scripts/tests/.');
+  if (availableTests.length === 0) {
+    console.log('ℹ  No .test.js files found in backend/scripts/tests/.');
+    process.exit(0);
   }
-  process.exit(1);
+
+  console.log(`ℹ  Running all tests (${availableTests.length} test suite(s) found)...`);
+  for (const file of availableTests) {
+    const fullPath = path.resolve(testsDir, file);
+    try {
+      execFileSync(process.execPath, [fullPath], { stdio: 'inherit' });
+    } catch (error) {
+      process.exit(error.status || 1);
+    }
+  }
+  process.exit(0);
 }
 
 const testFileName = targetArg.endsWith('.test.js') ? targetArg : `${targetArg}.test.js`;
