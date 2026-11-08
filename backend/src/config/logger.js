@@ -126,13 +126,4 @@ export const logger = winston.createLogger({
   exitOnError: false,
 });
 
-/**
- * Morgan HTTP request logging stream adapter.
- */
-export const logStream = {
-  write: (message) => {
-    logger.http(message.trim());
-  },
-};
-
 export default logger;

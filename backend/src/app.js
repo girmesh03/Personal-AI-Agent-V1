@@ -7,9 +7,8 @@ import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
-import morgan from 'morgan';
 import { env } from './config/env.js';
-import { logStream } from './config/logger.js';
+import { logger } from './config/logger.js';
 import { notFoundHandler } from './middleware/notFoundHandler.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import apiV1Routes from './routes/index.js';
@@ -63,12 +62,15 @@ app.use(express.json({ limit: '10mb' }));
 // 5. URL-encoded body parser
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// 6. HTTP request logger via Morgan
-if (env.isDevelopment) {
-  app.use(morgan('dev'));
-} else {
-  app.use(morgan('combined', { stream: logStream }));
-}
+// 6. HTTP request logger via centralized Winston logger
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    logger.http(`[HTTP] ${req.method} ${req.originalUrl} ${res.statusCode} ${duration}ms`);
+  });
+  next();
+});
 
 // 7. API v1 Central Router Mount (all domain routes mounted under /api/v1)
 app.use('/api/v1', apiV1Routes);

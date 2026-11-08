@@ -13,15 +13,19 @@ Establish the authoritative monorepo foundation with Express 5 backend and React
 | Task ID | Description | Status | Verification Evidence | Owner Decision Gate |
 |---|---|---|---|---|
 | **Task 0** | Mandatory Deep Codebase Audit, Preflight Stages A–E, and Governance Registers | `complete` | Baseline registers created, Preflight Report (A–K) approved | **GATE 1: Preflight Approval [APPROVED]** |
-| **Task 1.1** | Backend Core Config, Constants, Logger & Universal Error Hierarchy | `complete` | Modules verified, clean ESM loading | Gate: Task Acceptance & Commit Auth [APPROVED] |
-| **Task 1.2** | Database Connection & Lifecycle Manager | `complete` | `db.js` & `schemaOptions.js` aligned with `docs/*` (Sections 3 & 6) | **Gate: Task Acceptance & Commit Auth [PENDING]** |
-| **Task 1.3** | Central Routing Architecture, Express 5 Composition & Health API | `pending` | Local curl / health ping status 200 | Gate: Task Acceptance & Commit Auth |
-| **Task 1.4** | Backend Quality Verification & Deterministic Postman-Style Test Suite | `pending` | `node backend/scripts/tests/health.test.js` passing | Gate: Task Acceptance & Commit Auth |
-| **Task 1.5** | Client Dependencies, Verification Script & Protected Theme Mounting in App.jsx | `pending` | `npm run verify --workspace=client` passing | Gate: Task Acceptance & Commit Auth |
-| **Task 1.6** | Monorepo Orchestration & Workspace Verification | `pending` | `npm run verify` passing across workspaces | Gate: Task Acceptance & Commit Auth |
+| **Task 1.1** | Backend Core Config, Constants, Logger & Universal Error Hierarchy | `complete` | Modules verified, committed (`58bb106`) | Task Acceptance & Commit Auth [APPROVED] |
+| **Task 1.2** | Database Connection & Lifecycle Manager | `complete` | `db.js` & `schemaOptions.js` verified, committed (`67e3d3b`), duplicate log removed | Task Acceptance & Commit Auth [APPROVED] |
+| **Task 1.3** | Central Routing Architecture, Express 5 Composition & Health API | `complete` | Verified 200/404, removed default export & morgan devDependency | Task Acceptance & Commit Auth [APPROVED] |
+| **Task 1.4** | Backend Quality Verification & Deterministic Postman-Style Test Suite | `complete` | `runTest.js` & `test:health` individual test execution passing (4/4) | Task Acceptance & Commit Auth [APPROVED] |
+| **Task 1.5** | Client Dependencies, Verification Script & Protected Theme Mounting in App.jsx | `in_progress` | Client dependencies installed, `cleanDist.js` executed, `killPort` added to client dev | Gate: Task Acceptance & Commit Auth [PENDING] |
+| **Task 1.6** | Monorepo Orchestration & Workspace Verification | `pending` | `npm run verify` passing across workspaces | Gate: Task Acceptance & Commit Auth [PENDING] |
 | **Task 1.7** | Antigravity Browser Verification & Phase Review Gate | `pending` | 10-point browser test on port 3000 | **GATE 2: Browser Auth & Phase Sign-off** |
 
 ## Errors Encountered & Resolutions
-| Error | Attempt | Resolution |
+| Issue / Defect Observed | Root Cause | Resolution |
 |---|---|---|
-| None | - | - |
+| Redundant `export default` in `server.js` | Extraneous default export not consumed anywhere | Removed `export default { startServer, gracefulShutdown }` from `server.js` |
+| `morgan` devDependency used in `app.js` | `morgan` in `devDependencies` was imported in production code | Removed `morgan`, used native Winston `logger.http` middleware |
+| Duplicate MongoDB connection log | Logged both in `connectDB()` and `mongoose.connection.on('connected')` | Removed duplicate log in `connectDB()`; retained single authoritative event listener |
+| Missing `killPort` in client `dev` script | `client/package.json` had `"dev": "vite"` without port cleaner | Updated script to `"dev": "node scripts/killPort.js 3000 && vite"` |
+| Monolithic test command | `"test": "node scripts/tests/health.test.js"` would run all tests at once | Added `runTest.js` and `"test:health"` for individual test execution |

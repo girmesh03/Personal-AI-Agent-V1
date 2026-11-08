@@ -72,7 +72,6 @@ export const connectDB = async () => {
   try {
     const conn = await mongoose.connect(env.MONGO_URI, MONGO_OPTIONS);
     retryAttempt = 0;
-    logger.info(`MongoDB connected successfully: ${conn.connection.host}`);
     return conn.connection;
   } catch (error) {
     retryAttempt += 1;
@@ -108,7 +107,7 @@ export const disconnectDB = async () => {
 
 // Bind lifecycle event listeners to Mongoose connection
 mongoose.connection.on('connected', () => {
-  logger.info(`MongoDB lifecycle event: connected to ${mongoose.connection.host}`);
+  logger.info(`MongoDB connected successfully: ${mongoose.connection.host}`);
 });
 
 mongoose.connection.on('error', (err) => {

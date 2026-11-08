@@ -7,7 +7,8 @@
     "start": "node src/server.js",
     "dev": "node scripts/killPort.js 4000 && nodemon src/server.js",
     "verify": "node scripts/verifyCodebase.js",
-    "test": "node scripts/tests/health.test.js",
+    "test": "node scripts/runTest.js",
+    "test:health": "node scripts/tests/health.test.js",
     "postinstall": "node scripts/installFonts.js"
   },
   "keywords": [],
@@ -35,8 +36,7 @@
     "winston-daily-rotate-file": "^5.0.0"
   },
   "devDependencies": {
-    "nodemon": "^3.1.14",
-    "morgan": "^1.12.1"
+    "nodemon": "^3.1.14"
   },
   "optionalDependencies": {
     "@img/sharp-libvips-linux-x64": "^1.3.3",

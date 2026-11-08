@@ -13,6 +13,8 @@
     "dev:backend": "node backend/scripts/killPort.js 4000 && npm run dev --workspace=backend",
     "dev:client": "node backend/scripts/killPort.js 3000 && npm run dev --workspace=client",
     "kill-ports": "node backend/scripts/killPort.js",
+    "test": "npm run test --workspace=backend --",
+    "test:health": "npm run test:health --workspace=backend",
     "verify": "npm run verify --workspace=backend && npm run verify --workspace=client"
   }
 }
