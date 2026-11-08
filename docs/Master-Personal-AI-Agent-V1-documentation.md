@@ -1612,12 +1612,12 @@ flowchart TD
   - Native scripts: `npm run dev:backend`, `npm run verify --workspace=backend`.
 - **Frontend Deliverables:**
   - `client/src/main.jsx`, `App.jsx`, `theme/AppTheme.jsx` mounting MUI CssBaseline and theme primitives.
-  - Basic application shell displaying API health status.
+  - Basic application shell foundation.
   - Native scripts: `npm run dev:client`, `npm run build`.
 - **Browser Observation & Verification:**
   - Run root command: `npm run dev`.
   - Open browser at `http://localhost:3000`.
-  - **Verify visually:** The application loads instantly with dark/light theme background, displays "Operon / Personal AI Agent V1", and shows a green health badge ("Backend & Database Connected on Port 4000").
+  - **Verify visually:** The application loads instantly with dark/light theme background and displays the Operon application shell.
 
 ### Phase 2 — Database Models & Schemas (Entire Codebase)
 

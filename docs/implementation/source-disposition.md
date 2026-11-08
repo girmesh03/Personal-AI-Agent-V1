@@ -59,7 +59,7 @@ In accordance with `AGENTS.md` Section 4 and Master Specification Section 26:
 
 | # | V0 Source Section | V1 Target Destination | Required V1 Treatment & Architectural Invariants | Phase |
 |---|---|---|---|---|
-| 1 | `client/src/App.jsx` | `client/src/App.jsx` | **Rebuild**: Root SPA mounting `AppTheme`, `CssBaseline`, and rendering the live System Health Card. 100% English UI Chrome. | **Phase 1** |
+| 1 | `client/src/App.jsx` | `client/src/App.jsx` | **Rebuild**: Root application layout component mounting AppTheme and CssBaseline. 100% English UI Chrome. | **Phase 1** |
 | 2 | `client/src/main.jsx` | `client/src/main.jsx` | **Rebuild**: React 19 entry point with `React.StrictMode` mounting `<App />` into `#root`. | **Phase 1** |
 | 3 | `client/src/router.jsx` | `client/src/router.jsx` | **Rebuild**: Application router with public/protected route guards and lazy page loading. | Phase 2 |
 | 4 | `client/src/adapters/MuiChatAdapter.js` | *Deferred / Replaced* | **Replaced**: Live streaming SSE runtime integrated directly into chat interface. | Phase 3 |

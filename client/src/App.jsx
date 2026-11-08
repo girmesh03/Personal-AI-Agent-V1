@@ -1,8 +1,12 @@
+/**
+ * @module App
+ * @description Root application layout component.
+ */
 
-const App = () => {
+export const App = () => {
   return (
-    <div>App</div>
-  )
-}
+    <div>Operon</div>
+  );
+};
 
-export default App
+export default App;
