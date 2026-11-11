@@ -9,6 +9,7 @@
     "verify": "node scripts/verifyCodebase.js",
     "test": "node scripts/runTest.js",
     "test:health": "node scripts/tests/health.test.js",
+    "test:schema": "node scripts/tests/schema.test.js",
     "postinstall": "node scripts/installFonts.js"
   },
   "keywords": [],

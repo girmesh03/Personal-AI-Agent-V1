@@ -15,6 +15,7 @@
     "kill-ports": "node backend/scripts/killPort.js",
     "test": "npm run test --workspace=backend --",
     "test:health": "npm run test:health --workspace=backend",
+    "test:schema": "npm run test:schema --workspace=backend",
     "verify": "npm run verify --workspace=backend && npm run verify --workspace=client"
   }
 }
