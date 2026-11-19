@@ -1,6 +1,7 @@
 /**
  * @module scripts/killPort
  * @description Cross-platform port freer using native OS process inspection.
+ * Strictly adheres to Protocol 71 (universal JSDoc consistency).
  */
 import { execSync } from 'node:child_process';
 
@@ -44,5 +45,9 @@ const freePort = (port) => {
   }
 };
 
+/**
+ * Target TCP ports to inspect and free.
+ * @type {number[]}
+ */
 const targetPorts = process.argv[2] ? [parseInt(process.argv[2], 10)] : [4000, 3000];
 targetPorts.forEach((p) => freePort(p));

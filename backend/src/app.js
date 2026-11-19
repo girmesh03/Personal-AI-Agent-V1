@@ -15,16 +15,28 @@ import { errorHandler } from './middleware/errorHandler.js';
 import { HTTP_STATUS } from './utils/constants.js';
 import apiV1Routes from './routes/index.js';
 
+/**
+ * Express application instance.
+ * @type {import('express').Express}
+ */
 const app = express();
 
 // 1. Helmet security headers
 app.use(helmet());
 
 // 2. CORS configuration with credentials support
+/**
+ * Origins loaded and parsed from environment CLIENT_ORIGIN.
+ * @type {string[]}
+ */
 const configuredOrigins = env.CLIENT_ORIGIN
   ? env.CLIENT_ORIGIN.split(',').map((o) => o.trim()).filter(Boolean)
   : [];
 
+/**
+ * Full whitelist of permitted client origins.
+ * @type {string[]}
+ */
 const allowedOrigins = [
   ...configuredOrigins,
   'http://localhost:3000',
@@ -77,7 +89,13 @@ app.use((req, res, next) => {
   next();
 });
 
-// 8. Canonical system health check endpoint (Protocol 35)
+/**
+ * Canonical system health check endpoint (Protocol 35).
+ * @route GET /api/v1/health
+ * @access Public
+ * @controller inline handler
+ * @governs Protocol 35
+ */
 app.get('/api/v1/health', (_req, res) => {
   res.status(HTTP_STATUS.OK).json({
     status: 'UP',
@@ -85,6 +103,12 @@ app.get('/api/v1/health', (_req, res) => {
     uptime: Math.round(process.uptime()),
     environment: env.NODE_ENV,
   });
+});
+
+// 8a. Initialize canonical req.validated container (Protocol 60)
+app.use((req, _res, next) => {
+  req.validated = { body: {}, query: {}, params: {} };
+  next();
 });
 
 // 9. API v1 Router Mount

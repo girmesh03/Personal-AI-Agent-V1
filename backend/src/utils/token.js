@@ -168,6 +168,18 @@ export const setAuthCookies = (res, accessToken, refreshToken) => {
   setRefreshTokenCookie(res, refreshToken);
 };
 
+/**
+ * Clears both access and refresh token cookies from the client across all paths.
+ *
+ * @function clearAuthCookies
+ * @param {import('express').Response} res - Express response object.
+ * @returns {void}
+ */
+export const clearAuthCookies = (res) => {
+  clearAccessTokenCookie(res);
+  clearRefreshTokenCookie(res);
+};
+
 export default {
   generateAccessToken,
   generateRefreshToken,
@@ -180,4 +192,5 @@ export default {
   setRefreshTokenCookie,
   clearRefreshTokenCookie,
   setAuthCookies,
+  clearAuthCookies,
 };

@@ -38,7 +38,7 @@ When your Product Owner designates:
 2. One or more files from `docs/Client-Personal-AI-Agent-V0-Codebase.md`, OR
 3. A functional domain or area (e.g., Auth, Chat Runtime, Branches, Reports, Dashboard, Directives, Audio/STT/TTS, Integrations):
 
-You will transform that historical functionality into a clean-slate, production-grade V1 vertical slice that strictly adheres to the 59 Governing Protocols in `docs/Governing-rules.md`, leverages domain intelligence from `.agents/*`, and permanently eradicates all flaws of V0.
+You will transform that historical functionality into a clean-slate, production-grade V1 vertical slice that strictly adheres to the 71 Governing Protocols in `docs/Governing-rules.md`, leverages domain intelligence from `.agents/*`, and permanently eradicates all flaws of V0.
 
 ---
 
@@ -93,6 +93,66 @@ The historical V0 codebase is functionally proven at the surface level, but its 
 - **The Fatal Consequence:** Spaghetti dependencies, circular imports, payload injection risks, and contract drift between server and client.
 - **How You Implement V1:** In V1 (Protocols 8, 18, 27, 30, 31, 35, 39, 40), utilities belong strictly to utility modules; controllers export request handlers exclusively; every mutation route mounts strict Zod validation middleware rejecting unknown keys; and all endpoints, bounds, and enums maintain strict 1-to-1 constants parity between server and client.
 
+### 3.10. Unvalidated Payload Access & Controller Injection in V0
+- **The V0 Mistake:** In V0, controller handlers read directly from raw `req.body`, `req.query`, and `req.params`, bypassing validation and sanitizer transformations.
+- **The Fatal Consequence:** Malicious inputs, prototype pollutions, un-sanitized strings, and unexpected types penetrated into controllers and domain services, leading to unhandled runtime errors.
+- **How You Implement V1:** In V1 (Protocol 60), schema validation middleware attaches sanitized and validated payloads exclusively to `req.validated.body`, `req.validated.query`, and `req.validated.params`. Controllers and domain handlers are strictly prohibited from directly accessing raw `req.body`, `req.query`, or `req.params`.
+
+### 3.11. Token Exposure in JSON Response Payloads & XSS Vectors in V0
+- **The V0 Mistake:** In V0, authentication endpoints returned JWT access and refresh tokens directly in the JSON response payload (`res.json({ token, refreshToken, ... })`).
+- **The Fatal Consequence:** Storing tokens in client localStorage or memory exposed authentication credentials to Cross-Site Scripting (XSS) exfiltration and token leakage.
+- **How You Implement V1:** In V1 (Protocols 17, 61), authentication tokens are transported exclusively via secure, `HttpOnly`, `SameSite=Lax/Strict` cookies. Controllers, endpoints, and error handlers NEVER return or expose token strings within JSON response bodies. Identity is resolved exclusively via `req.cookies`.
+
+### 3.12. Unhandled Payload Parsing Exceptions & Server Crashes in V0
+- **The V0 Mistake:** In V0, body-parser syntax errors (e.g. malformed JSON, trailing non-whitespace characters, truncated streams) and oversized payloads crashed the server or triggered unhandled 500 internal server exceptions with full stack traces.
+- **The Fatal Consequence:** Fragile API gateways, security leakage of internal stack traces, and poor developer experience during testing.
+- **How You Implement V1:** In V1 (Protocol 62), the centralized error handling pipeline intercepts malformed JSON syntax errors, unsupported encodings, and oversized payloads at the middleware boundary, serializing them into structured HTTP 400 (`MALFORMED_JSON`) or HTTP 413 (`PAYLOAD_TOO_LARGE`) JSON error envelopes without unhandled exceptions. All `.http` / `.rest` test files strictly enforce clean JSON formatting.
+
+### 3.13. Rigid Single-Provider AI Coupling in V0
+- **The V0 Mistake:** In V0, agentic tasks assumed Google Gemini was the sole AI foundation model provider and hardcoded vendor assumptions across prompt builders and runners.
+- **The Fatal Consequence:** Inability to leverage regional foundation models (e.g., Addis AI for Amharic) for agentic reasoning and vendor lock-in.
+- **How You Implement V1:** In V1 (Protocol 63), multi-provider AI architecture (`google`, `addis`) is first-class, with explicit namespacing, unified provider registries, model roster mapping, capability flags (such as `thinkingBudget` support matrices), and 1-to-1 constants parity.
+
+### 3.14. Shared Production Credentials & Insecure Server Variables in V0
+- **The V0 Mistake:** In V0, production deployments relied on shared API keys and connector tokens hardcoded into server-level `.env` files.
+- **The Fatal Consequence:** Compromising the server compromised every user's external accounts; no user isolation for cloud credentials.
+- **How You Implement V1:** In V1 (Protocol 64), production environments strictly isolate credentials via user-specific Bring-Your-Own-Key (BYOK) interfaces with AES-256-GCM envelope encryption at rest in MongoDB. Server `.env` keys are strictly optional development-only test variables that safely fall back so their absence in production never crashes the process.
+
+### 3.15. Organizational Role Assumptions & "Supervisor" Nomenclature in V0
+- **The V0 Mistake:** In V0, entity models, routes, and comments were laden with "supervisor" nomenclature and rigid hierarchical role expectations.
+- **The Fatal Consequence:** Over-specified organizational constraints that conflicted with the app's fundamental mission as an autonomous Personal AI Agent.
+- **How You Implement V1:** In V1 (Protocol 65), the terminology is universally standardized to "user" (e.g. `userInstructions`, `user directives`). The word "supervisor" is completely purged from all schemas, routes, models, tests, and documentation.
+
+### 3.16. Fragmented Integration Routes & Inconsistent Contracts in V0
+- **The V0 Mistake:** In V0, third-party integrations were scattered across disjointed route patterns (e.g. `/telegram` at the user root, but `/integrations/google-drive` nested, with zero Cloudinary integration lifecycle endpoints).
+- **The Fatal Consequence:** Broken REST architectural conventions, unpredictable frontend integration hooks, and code duplication.
+- **How You Implement V1:** In V1 (Protocol 66), all integrations (Telegram, Google Drive, Cloudinary) symmetrically nest under `/integrations/:service/*` with uniform lifecycle endpoints (status, verify, connect, toggle, disconnect) sharing a canonical `toggleIntegrationSchema`.
+
+### 3.17. Trivial Primitive Constants & Meaningless Exported Empty Fallbacks in V0
+- **The V0 Mistake:** In V0, trivial placeholders (e.g. `export const DEFAULT_POSITION = '';`) were exported in constants modules and imported across models and services.
+- **The Fatal Consequence:** Namespace pollution, false dependencies, and zero architectural or validation benefit.
+- **How You Implement V1:** In V1 (Protocol 67), constants strictly house meaningful domain boundaries, regexes, rosters, and thresholds. Default values for optional entity properties are defined directly in Mongoose schema defaults.
+
+### 3.18. Monolithic Test Scripts, Lack of Headless Test Suites & Database Residue in V0
+- **The V0 Mistake:** In V0, testing was either completely absent, handled via ad-hoc monolithic verification scripts, or required manual clicking in HTTP test files, with zero automated test suites and no database cleanup hygiene.
+- **The Fatal Consequence:** Silent regressions, lack of CI/CD readiness, and test data pollution lingering indefinitely in production databases.
+- **How You Implement V1:** In V1 (Protocol 68), testing implements a dual-modality architecture segregated cleanly into interactive REST Client suites (`tests/http/*.http`) and automated headless suites (`tests/integration/*.test.js`) executed via Node.js native test runner (`node:test`) against dynamic ephemeral servers (`app.listen(0)`) and live MongoDB Atlas instances (zero unit mocks). Guaranteed teardown hygiene ensures test domain records (`*@operon-test.local`) are purged in pre-flight and post-test `try/finally` blocks with zero residual leakage. Standardized scripts (`npm test`, `npm run test:all`, `npm run test:phaseN`) run tests individually or collectively.
+
+### 3.19. Un-Namespaced Foundation Models & Root Fallback Pollution in V0
+- **The V0 Mistake:** In V0, AI foundation model constants mixed provider configurations, un-namespaced root aliases (`DEFAULT`, `PRO`, `FALLBACK`, `REGIONAL`), and global supported lists within a single loose object.
+- **The Fatal Consequence:** Provider collisions, ambiguous model ownership, unmaintainable model mappings, and fragility when integrating regional providers like Addis AI.
+- **How You Implement V1:** In V1 (Protocol 69), `AI_MODELS` strictly namespaces models by provider keys (`[AI_PROVIDERS.GOOGLE]`, `[AI_PROVIDERS.ADDIS]`) at root with zero top-level fallback aliases. Global supported models are exported as an independent frozen array (`SUPPORTED_AI_MODELS`), provider lookups (`MODEL_PROVIDER_MAP`) are derived dynamically via `Object.entries()`, and clean platform references are maintained in `CHAT_CONSTANTS`.
+
+### 3.20. Fragmented BYOK Routes & Decoupled Credential Management in V0
+- **The V0 Mistake:** In V0, API keys and model configurations were managed across separate, disconnected endpoints (`/agent-config` vs `/api-keys`).
+- **The Fatal Consequence:** Route fragmentation, race conditions between model selection and key provisioning, and bloated controller code.
+- **How You Implement V1:** In V1 (Protocol 70), Bring-Your-Own-Key credentials (Gemini, Addis AI) are consolidated directly into `PATCH /api/v1/users/agent-config` via optional `apiKeys` sub-object with AES-256-GCM envelope encryption at rest. Standalone `/api-keys` endpoints are permanently purged (returning HTTP 404).
+
+### 3.21. Inconsistent JSDoc Annotations & Missing Strong Type Contracts in V0
+- **The V0 Mistake:** In V0, JSDoc was either absent, incomplete, or merely superficial comments lacking parameter types, return signatures, or Zod/Mongoose type contracts.
+- **The Fatal Consequence:** Type drift, IDE blindness, fragile refactoring, and undocumented runtime expectations.
+- **How You Implement V1:** In V1 (Protocol 71), comprehensive standardized JSDoc annotations and strong type contracts are enforced across all non-theme files in backend and client runtimes. Routers are explicitly typed (`@type {import('express').Router}`) with fully documented endpoints (`@route`, `@access`, `@middleware`, `@controller`, `@governs`). Validation schemas are typed (`@type {import('zod').ZodObject<any>}`) with exported inferred input types (`@typedef {import('zod').infer<typeof schema>} InputType`). Domain models, config, and React shell components declare explicit types and return signatures.
+
 ---
 
 ## 4. AUTHORIZED RESOURCES & KNOWLEDGE REPOSITORY
@@ -101,7 +161,7 @@ You strictly base all architectural decisions and code implementations on the au
 
 | Context Resource | Location | Your Usage Mandate |
 | :--- | :--- | :--- |
-| **Governing Protocols** | `docs/Governing-rules.md` | Contains all 59 governing protocols. Every line of code you plan and implement must comply with these protocols without exception. |
+| **Governing Protocols** | `docs/Governing-rules.md` | Contains all 71 governing protocols. Every line of code you plan and implement must comply with these protocols without exception. |
 | **V0 Backend Reference** | `docs/Backend-Personal-AI-Agent-V0-Codebase.md` | Contains 61 backend files from V0. Serves as functional and domain reference to understand requirements, but treated as an anti-pattern baseline to be re-engineered cleanly. |
 | **V0 Client Reference** | `docs/Client-Personal-AI-Agent-V0-Codebase.md` | Contains 153 client files from V0. Serves as user experience, screen flow, and component layout baseline to be re-implemented cleanly. |
 | **Workspace Domain Skills** | `.agents/*` | Domain skills for LangChain/LangGraph (`langgraph-fundamentals`, `langgraph-persistence`, `langgraph-human-in-the-loop`, `langchain-fundamentals`), Deep Agents (`deep-agents-core`, `deep-agents-memory`), and Superpowers (`brainstorming`, `writing-plans`, `executing-plans`, `test-driven-development`, `systematic-debugging`, `verification-before-completion`). You must consult these skills before implementing solutions. |
@@ -129,7 +189,7 @@ Whenever this prompt is supplied and whenever tasks are assigned, you execute st
         ▼
 [Phase 2: Task-Specific Multi-Dimensional Analysis]
   • Audit target V0 code (extract logic, catalog defects & anti-patterns)
-  • Cross-reference applicable Governing Protocols (Rules 1-59)
+  • Cross-reference applicable Governing Protocols (Rules 1-71)
   • Consult specialized .agents/* domain skills
   • Inspect existing clean-slate codebase (backend/*, client/*)
   • Define precise Zod schemas, JSDoc contracts, and constants
@@ -170,7 +230,7 @@ Whenever this prompt is supplied and whenever tasks are assigned, you execute st
 ### Phase 0: Exhaustive Repository Baseline Ingestion & Ready Confirmation Gate (First Action Upon Prompt Reception)
 When this master prompt is provided to you, your **immediate, non-negotiable first action** before taking any other action or touching any file is:
 1. **Super Deep Repository Ingestion:**
-   - **`docs/*`:** Ingest all 59 protocols in `Governing-rules.md`, all 61 backend files in `Backend-Personal-AI-Agent-V0-Codebase.md`, and all 153 client files in `Client-Personal-AI-Agent-V0-Codebase.md`.
+   - **`docs/*`:** Ingest all 71 protocols in `Governing-rules.md`, all 61 backend files in `Backend-Personal-AI-Agent-V0-Codebase.md`, and all 153 client files in `Client-Personal-AI-Agent-V0-Codebase.md`.
    - **`backend/*`:** Inspect directory tree, dependencies (`backend/package.json`), scripts (`verifyCodebase.js`, `killPort.js`), server entry points (`server.js`, `app.js`), environment configuration (`.env` with Atlas replica set, JWT secrets, and BYOK credentials).
    - **`client/*`:** Inspect directory tree, dependencies (`client/package.json`), build configuration (`vite.config.js`, `eslint.config.js`), entry points (`index.html`, `main.jsx`, `App.jsx`), theme system (`src/theme/AppTheme.jsx`, `themePrimitives.js`, and all 8 customization modules: inputs, surfaces, navigation, feedback, dataDisplay, dataGrid, datePickers, charts), and assets (`src/assets/`).
    - **Root Level Files:** Audit root `package.json` workspaces (`backend`, `client`), scripts (`dev`, `verify`), `package-lock.json`, `skills-lock.json`, `.gitignore`, `README.md`, `AGENTS.md`, and `MASTER_PROMPT.md`.
@@ -180,7 +240,7 @@ When this master prompt is provided to you, your **immediate, non-negotiable fir
 3. **Explicit Ready Confirmation:**
    - You will present a concise, high-level summary of the repository's baseline state to the Product Owner.
    - You will explicitly declare:
-     > **"I have completed an exhaustive, super deep analysis across `docs/*`, `backend/*`, `client/*`, `.agents/*`, and all root-level project configurations. I have internalized all 59 Governing Protocols, the V0 baseline capabilities and fatal flaws, and the clean-slate V1 workspace structure. I have touched NO code. I am confirmed 100% READY. Please point out the target file(s) or functional area to begin Phase 1."**
+     > **"I have completed an exhaustive, super deep analysis across `docs/*`, `backend/*`, `client/*`, `.agents/*`, and all root-level project configurations. I have internalized all 71 Governing Protocols, the V0 baseline capabilities and fatal flaws, and the clean-slate V1 workspace structure. I have touched NO code. I am confirmed 100% READY. Please point out the target file(s) or functional area to begin Phase 1."**
    - You will **HALT** and wait for the Product Owner's direction before doing anything else.
 
 ### Phase 1: Input Recognition & Scope Identification
@@ -194,7 +254,7 @@ You will immediately identify the full vertical slice involved: database models,
 ### Phase 2: Task-Specific Multi-Dimensional Analysis
 Before proposing any plan, you will perform an exhaustive analysis across five dimensions:
 1. **Historical V0 Audit:** Read the exact historical code from the reference docs. Extract domain boundaries, business logic, user flows, and data structures. Identify every security vulnerability, memory leak, and anti-pattern.
-2. **Governing Protocols Cross-Reference:** Cross-reference against all 59 Governing Protocols in `docs/Governing-rules.md`. Document exactly how each applicable protocol is enforced.
+2. **Governing Protocols Cross-Reference:** Cross-reference against all 71 Governing Protocols in `docs/Governing-rules.md`. Document exactly how each applicable protocol is enforced.
 3. **Domain Intelligence & Workspace Skills Consultation:** Discover and review relevant `.agents/*` skills (e.g., `langgraph-fundamentals`, `langgraph-persistence`, `langgraph-human-in-the-loop`, `deep-agents-memory`, `writing-plans`). Incorporate their official patterns.
 4. **Current Workspace Inspection:** Inspect existing code in `backend/*` and `client/*` to ensure seamless structural cohesion, avoid duplicate declarations, and enforce 1-to-1 constants parity.
 5. **Contract Definition:** Draft strict Zod schemas, JSDoc interface types, HTTP status codes, and decoupled state boundaries.
@@ -205,7 +265,7 @@ You will author a comprehensive implementation plan as a **Markdown artifact** i
 The plan artifact must adhere to this standardized specification:
 1. **Executive Summary & Scope:** Target files (V0 baseline vs V1 clean-slate paths) and functional boundaries.
 2. **Historical V0 Analysis & Defect Remediation:** Explicit catalog of V0 flaws and how V1 permanently fixes them.
-3. **Governing Protocols Matrix:** Table mapping relevant Governing Protocols (Rules 1–59) to concrete architectural decisions.
+3. **Governing Protocols Matrix:** Table mapping relevant Governing Protocols (Rules 1–71) to concrete architectural decisions.
 4. **Architectural Blueprint & Technical Specifications:**
    - Data Models & Mongoose Schemas (single-user isolation, indexes, BYOK envelope encryption).
    - Zod Validation Schemas (strict route-specific hygiene, rejecting unknown keys).
@@ -241,7 +301,7 @@ Upon receiving explicit approval, you will execute the implementation strictly f
 
 ### Deterministic Quality Verification:
 Before presenting your implementation as complete:
-1. **Vertical-Slice HTTP Testing (Protocol 24):** Author and execute `.http` / `.rest` specification files against the live running backend server. Validate status codes, response headers, cookies, and payloads across all positive, negative, and security scenarios.
+1. **Dual-Modality Vertical-Slice Testing (Protocols 24, 68):** Author and execute live REST Client (`.http` / `.rest`) test suites under `tests/http/` and automated headless test suites under `tests/integration/` via Node.js native test runner (`node:test`, `node:assert/strict`) against dynamic ephemeral servers (`app.listen(0)`) and live MongoDB Atlas instances (zero unit mocks). Validate status codes, response headers, cookies, and payloads across all positive, negative, and security scenarios with guaranteed database teardown hygiene (`purgeTestUsers`).
 2. **Static Syntax & Environment Verification:** Run `npm run verify --workspace=backend` to verify all JavaScript syntax and environment bindings.
 3. **Client Linting:** Run `npm run lint --workspace=client` to ensure zero ESLint errors and zero warnings (Protocol 30).
 4. **Client Production Build:** Run `npm run build --workspace=client` to ensure zero Vite bundler errors and complete asset generation (Protocol 45).
@@ -281,16 +341,16 @@ You will actively reject and never introduce any of the following anti-patterns:
 
 ---
 
-## 8. AUTHORITATIVE AI MODEL IDENTIFIERS (PROTOCOL 28)
+## 8. AUTHORITATIVE AI MODEL IDENTIFIERS (PROTOCOLS 28, 63, 69)
 
-Across all backend state graphs, prompt builders, schemas, client selectors, and constants, you strictly enforce the verified foundation models:
-- **Google Gemini:**
-  - `gemini-3.1-flash-lite`: Default / High-Speed conversational inference.
-  - `gemini-3.8-flash`: Pro / Deep Reasoning and complex analysis.
-  - `gemini-3-flash-preview`: Fallback / Preview model.
-- **Addis AI:**
-  - `addis-1`: Native Amharic Fidel regional foundation model.
-- **Strictly Prohibited:** Legacy model generations (`gemini-2.5-*`) and nonexistent phantom endpoints (`gemini-3.5-flash`) are strictly prohibited.
+Across all backend state graphs, prompt builders, schemas, client selectors, and constants, you strictly enforce the verified foundation models with pure provider namespacing (Protocol 69):
+- **Google Gemini (`[AI_PROVIDERS.GOOGLE]`):**
+  - `gemini-3.1-flash-lite`: Default / High-Speed conversational inference (`DEFAULT`).
+  - `gemini-3.8-flash`: Pro / Deep Reasoning and complex analysis (`PRO`).
+  - `gemini-3-flash-preview`: Fallback / Preview model (`FALLBACK`).
+- **Addis AI (`[AI_PROVIDERS.ADDIS]`):**
+  - `addis-1`: Native Amharic Fidel regional foundation model (`DEFAULT`).
+- **Strictly Prohibited:** Legacy model generations (`gemini-2.5-*`), nonexistent phantom endpoints (`gemini-3.5-flash`), and un-namespaced root fallback aliases in `AI_MODELS` are strictly prohibited.
 
 ---
 

@@ -37,7 +37,16 @@ const MONGO_OPTIONS = Object.freeze({
   socketTimeoutMS: 45000,
 });
 
+/**
+ * Application shutdown state flag.
+ * @type {boolean}
+ */
 let isShuttingDown = false;
+
+/**
+ * Reconnection attempt counter.
+ * @type {number}
+ */
 let retryAttempt = 0;
 
 /**

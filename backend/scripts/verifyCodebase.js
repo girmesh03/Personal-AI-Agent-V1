@@ -1,6 +1,7 @@
 /**
- * @file backend/scripts/verifyCodebase.js
+ * @module scripts/verifyCodebase
  * @description Static verification script checking syntax of all backend source files and validating environment rules.
+ * Strictly adheres to Protocol 71 (universal JSDoc consistency and type contracts).
  */
 
 import fs from 'fs';
@@ -13,6 +14,13 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const srcDir = path.resolve(__dirname, '../src');
 
+/**
+ * Recursively scans directory tree to locate all JavaScript source files.
+ *
+ * @function getAllSourceFiles
+ * @param {string} dir - Directory path to traverse.
+ * @returns {string[]} Array of absolute file paths to JavaScript files.
+ */
 function getAllSourceFiles(dir) {
   let results = [];
   const entries = fs.readdirSync(dir, { withFileTypes: true });
@@ -29,6 +37,12 @@ function getAllSourceFiles(dir) {
   return results;
 }
 
+/**
+ * Executes static verification pipeline: environment validation followed by syntax checks.
+ *
+ * @function runVerification
+ * @returns {void}
+ */
 function runVerification() {
   console.log('🔍 Running Backend Codebase Verification...');
 

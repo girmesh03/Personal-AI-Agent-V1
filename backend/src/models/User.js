@@ -28,7 +28,8 @@ import { encryptSecret } from '../utils/crypto.js';
 /**
  * @typedef {object} IUserSettingsAgentConfig
  * @property {string} persona - Configurable operational persona description.
- * @property {string} defaultModel - Default foundation model identifier (Protocol 28).
+ * @property {string} defaultProvider - Default AI provider ('google' | 'addis') (Protocol 63).
+ * @property {string} defaultModel - Default foundation model identifier (Protocol 28, 63).
  * @property {number} defaultThinkingBudget - Default reasoning token budget.
  * @property {string} defaultLanguage - Default interaction language ('am' | 'en' | 'auto').
  */
@@ -55,6 +56,10 @@ import { encryptSecret } from '../utils/crypto.js';
  * @property {Date} updatedAt - Timestamp of last user update.
  */
 
+/**
+ * Mongoose schema definition for the User collection.
+ * @type {import('mongoose').Schema<IUser>}
+ */
 const userSchema = new mongoose.Schema(
   {
     firstName: {
@@ -78,9 +83,20 @@ const userSchema = new mongoose.Schema(
       trim: true,
       match: [EMAIL_REGEX, 'Please provide a valid email address.'],
     },
+    googleId: {
+      type: String,
+      default: null,
+      sparse: true,
+      index: true,
+    },
     password: {
       type: String,
-      required: [true, 'Password is required.'],
+      required: [
+        function () {
+          return this.authProvider === 'local' || this.isPasswordSet;
+        },
+        'Password is required.',
+      ],
       minlength: [PASSWORD_MIN_LENGTH, `Password must be at least ${PASSWORD_MIN_LENGTH} characters long.`],
       select: false,
     },
@@ -102,6 +118,10 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    avatarPublicId: {
+      type: String,
+      default: null,
+    },
     settings: {
       sttEngine: {
         type: String,
@@ -112,6 +132,11 @@ const userSchema = new mongoose.Schema(
         persona: {
           type: String,
           default: CHAT_CONSTANTS.DEFAULT_PERSONA,
+        },
+        defaultProvider: {
+          type: String,
+          enum: CHAT_CONSTANTS.SUPPORTED_PROVIDERS,
+          default: CHAT_CONSTANTS.DEFAULT_PROVIDER,
         },
         defaultModel: {
           type: String,
@@ -377,5 +402,9 @@ userSchema.methods.matchPassword = async function (enteredPassword) {
   return bcrypt.compare(enteredPassword, this.password);
 };
 
+/**
+ * Mongoose model instance for the User collection.
+ * @type {import('mongoose').Model<IUser>}
+ */
 export const User = mongoose.model('User', userSchema);
 export default User;

@@ -49,6 +49,7 @@ export const parseDurationToMs = (durationStr, defaultMs) => {
 
 /**
  * Strict Zod schema validating backend environment variables.
+ * @type {import('zod').ZodObject<any>}
  */
 const envSchema = z.object({
   PORT: z.coerce.number().default(4000),
@@ -60,19 +61,19 @@ const envSchema = z.object({
   JWT_REFRESH_SECRET: z.string().min(32, 'JWT_REFRESH_SECRET must be at least 32 characters'),
   JWT_ACCESS_EXPIRES_IN: z.string().default('15m'),
   JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
+  ENCRYPTION_KEY: z.string().optional().default(''),
 
-  GOOGLE_CLIENT_ID: z.string().optional().default(''),
-  GOOGLE_CLIENT_SECRET: z.string().optional().default(''),
-  GOOGLE_CALLBACK_URL: z.string().optional().default('http://localhost:4000/api/v1/auth/google/callback'),
+  GOOGLE_SSO_CLIENT_ID: z.string().optional().default(''),
+  GOOGLE_SSO_CLIENT_SECRET: z.string().optional().default(''),
+  GOOGLE_SSO_CALLBACK_URL: z.string().optional().default('http://localhost:4000/api/v1/auth/google/sso/callback'),
 
-  OAUTH_GOOGLE_CLIENT_ID: z.string().optional().default(''),
-  OAUTH_GOOGLE_CLIENT_SECRET: z.string().optional().default(''),
-  OAUTH_GOOGLE_CALLBACK_URL: z.string().optional().default(''),
+  GOOGLE_DRIVE_CLIENT_ID: z.string().optional().default(''),
+  GOOGLE_DRIVE_CLIENT_SECRET: z.string().optional().default(''),
+  GOOGLE_DRIVE_CALLBACK_URL: z.string().optional().default('http://localhost:4000/api/v1/users/integrations/google-drive/callback'),
 
   GEMINI_DEVELOPMENT_ONLY_API_KEY: z.string().optional().default(''),
   ADDIS_AI_DEVELOPMENT_ONLY_API_KEY: z.string().optional().default(''),
 
-  TELEGRAM_DEVELOPMENT_ONLY_ENABLED: z.string().optional().default('false'),
   TELEGRAM_DEVELOPMENT_ONLY_BOT_TOKEN: z.string().optional().default(''),
   TELEGRAM_DEVELOPMENT_ONLY_MANAGEMENT_CHAT_ID: z.string().optional().default(''),
   TELEGRAM_DEVELOPMENT_ONLY_MAINTENANCE_CHAT_ID: z.string().optional().default(''),
@@ -106,9 +107,17 @@ export const validateEnv = (envObj = process.env) => {
 // Validate environment on initial load
 const parsedEnv = validateEnv(process.env);
 
+// Enforce Protocol 64: Production isolation warning when dedicated ENCRYPTION_KEY is unset
+if (parsedEnv.NODE_ENV === 'production' && !parsedEnv.ENCRYPTION_KEY) {
+  console.warn(
+    '[SECURITY WARNING] Production environment detected without dedicated ENCRYPTION_KEY. Falling back to JWT_ACCESS_SECRET for envelope encryption is not recommended for production deployments (Protocol 64).'
+  );
+}
+
 /**
  * Deeply frozen application environment configuration.
  * @constant
+ * @type {Readonly<import('zod').infer<typeof envSchema>>}
  */
 export const env = Object.freeze({
   PORT: parsedEnv.PORT,
@@ -120,15 +129,19 @@ export const env = Object.freeze({
   JWT_REFRESH_SECRET: parsedEnv.JWT_REFRESH_SECRET,
   JWT_ACCESS_EXPIRES_IN: parsedEnv.JWT_ACCESS_EXPIRES_IN,
   JWT_REFRESH_EXPIRES_IN: parsedEnv.JWT_REFRESH_EXPIRES_IN,
+  ENCRYPTION_KEY: parsedEnv.ENCRYPTION_KEY || parsedEnv.JWT_ACCESS_SECRET,
 
-  GOOGLE_CLIENT_ID: parsedEnv.GOOGLE_CLIENT_ID || parsedEnv.OAUTH_GOOGLE_CLIENT_ID,
-  GOOGLE_CLIENT_SECRET: parsedEnv.GOOGLE_CLIENT_SECRET || parsedEnv.OAUTH_GOOGLE_CLIENT_SECRET,
-  GOOGLE_CALLBACK_URL: parsedEnv.GOOGLE_CALLBACK_URL || parsedEnv.OAUTH_GOOGLE_CALLBACK_URL,
+  GOOGLE_SSO_CLIENT_ID: parsedEnv.GOOGLE_SSO_CLIENT_ID,
+  GOOGLE_SSO_CLIENT_SECRET: parsedEnv.GOOGLE_SSO_CLIENT_SECRET,
+  GOOGLE_SSO_CALLBACK_URL: parsedEnv.GOOGLE_SSO_CALLBACK_URL,
+
+  GOOGLE_DRIVE_CLIENT_ID: parsedEnv.GOOGLE_DRIVE_CLIENT_ID,
+  GOOGLE_DRIVE_CLIENT_SECRET: parsedEnv.GOOGLE_DRIVE_CLIENT_SECRET,
+  GOOGLE_DRIVE_CALLBACK_URL: parsedEnv.GOOGLE_DRIVE_CALLBACK_URL,
 
   GEMINI_DEVELOPMENT_ONLY_API_KEY: parsedEnv.GEMINI_DEVELOPMENT_ONLY_API_KEY,
   ADDIS_AI_DEVELOPMENT_ONLY_API_KEY: parsedEnv.ADDIS_AI_DEVELOPMENT_ONLY_API_KEY,
 
-  TELEGRAM_DEVELOPMENT_ONLY_ENABLED: parsedEnv.TELEGRAM_DEVELOPMENT_ONLY_ENABLED === 'true',
   TELEGRAM_DEVELOPMENT_ONLY_BOT_TOKEN: parsedEnv.TELEGRAM_DEVELOPMENT_ONLY_BOT_TOKEN,
   TELEGRAM_DEVELOPMENT_ONLY_MANAGEMENT_CHAT_ID: parsedEnv.TELEGRAM_DEVELOPMENT_ONLY_MANAGEMENT_CHAT_ID,
   TELEGRAM_DEVELOPMENT_ONLY_MAINTENANCE_CHAT_ID: parsedEnv.TELEGRAM_DEVELOPMENT_ONLY_MAINTENANCE_CHAT_ID,

@@ -1,0 +1,896 @@
+### Personal AI Agent (Operon) V1 - Phase 2 Authentication & User Domain Tests
+### Protocol 24: Deterministic Vertical-Slice Functional Testing (.http)
+###
+### Usage:
+###   1. Start backend server: npm run dev:backend (or node backend/src/server.js)
+###   2. Open this file in VS Code and click "Send Request" above any scenario.
+###      The response displays immediately in the REST Client panel.
+###
+### Protocol 17 & 61 Authentication Architecture:
+###   Authentication is transported exclusively via HttpOnly, SameSite cookies.
+###   Tokens (accessToken, refreshToken) are NEVER exposed in JSON response payloads.
+###   VS Code REST Client automatically maintains the session cookie jar for localhost.
+###   Executing Scenario 5 (Login) automatically authorizes all subsequent User Domain requests!
+
+@host = http://localhost:4000
+@baseUrl = {{host}}/api/v1
+@authUrl = {{baseUrl}}/auth
+@usersUrl = {{baseUrl}}/users
+
+@mockGoogleCode = mock_code_operon.google.user
+
+@testEmail = operon.architect@example.com
+@testPassword = OperonPass123!
+@newPassword = OperonNewPass456!
+
+### ============================================================================
+### AUTHENTICATION DOMAIN TESTS (/api/v1/auth)
+### ============================================================================
+
+### 1. Account Registration (Protocol 32 Minimal Registration - Positive)
+# @name registerSuccess
+# Expected Response:
+#   HTTP/1.1 201 Created
+#   {
+#     "success": true,
+#     "message": "Account registered successfully.",
+#     "data": {
+#       "user": {
+#         "email": "operon.architect@example.com",
+#         "firstName": "Operon",
+#         "lastName": "Architect"
+#       }
+#     }
+#   }
+POST {{authUrl}}/register HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+
+{
+  "email": "{{testEmail}}",
+  "password": "{{testPassword}}"
+}
+
+###
+
+### 2. Account Registration - Duplicate Email Rejection (Conflict)
+# @name registerDuplicate
+# Expected Response:
+#   HTTP/1.1 409 Conflict
+#   {
+#     "success": false,
+#     "errorCode": "CONFLICT"
+#   }
+POST {{authUrl}}/register HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+
+{
+  "email": "{{testEmail}}",
+  "password": "{{testPassword}}"
+}
+
+###
+
+### 3. Account Registration - Protocol 32 Invariant (Extra Fields Rejected)
+# @name registerExtraFieldsRejected
+# Expected Response:
+#   HTTP/1.1 422 Unprocessable Content
+#   {
+#     "success": false,
+#     "errorCode": "VALIDATION_ERROR"
+#   }
+POST {{authUrl}}/register HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+
+{
+  "email": "intruder@example.com",
+  "password": "{{testPassword}}",
+  "firstName": "Hacker",
+  "role": "admin",
+  "avatar": "https://malicious.link/avatar.png"
+}
+
+###
+
+### 4. Account Registration - Weak Password Rejection
+# @name registerWeakPassword
+# Expected Response:
+#   HTTP/1.1 422 Unprocessable Content
+#   {
+#     "success": false,
+#     "errorCode": "VALIDATION_ERROR"
+#   }
+POST {{authUrl}}/register HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+
+{
+  "email": "weak@example.com",
+  "password": "weak"
+}
+
+###
+
+### 4a. Account Registration - Invalid Email Format Rejection
+# @name registerInvalidEmail
+# Expected Response:
+#   HTTP/1.1 422 Unprocessable Content
+#   {
+#     "success": false,
+#     "errorCode": "VALIDATION_ERROR"
+#   }
+POST {{authUrl}}/register HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+
+{
+  "email": "not-a-valid-email",
+  "password": "{{testPassword}}"
+}
+
+###
+
+### 4b. Account Registration - Malformed JSON Payload Defense (Protocol 62)
+# @name registerMalformedJsonDefense
+# Expected Response:
+#   HTTP/1.1 400 Bad Request
+#   {
+#     "success": false,
+#     "errorCode": "MALFORMED_JSON",
+#     "message": "Malformed JSON payload in request body. Please verify JSON syntax."
+#   }
+POST {{authUrl}}/register HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+
+{
+  "email": "malformed@example.com",
+  "password": 
+}
+
+###
+
+### 5. Account Login - Positive (Protocol 17 & 61: Zero Token Exposure in JSON)
+# @name loginSuccess
+# Expected Response:
+#   HTTP/1.1 200 OK
+#   Set-Cookie: accessToken=...; Path=/; HttpOnly; SameSite=Lax
+#   Set-Cookie: refreshToken=...; Path=/; HttpOnly; SameSite=Lax
+#   {
+#     "success": true,
+#     "message": "Authentication successful.",
+#     "data": {
+#       "user": {
+#         "email": "operon.architect@example.com",
+#         "firstName": "Operon",
+#         "lastName": "Architect"
+#       }
+#     }
+#   }
+POST {{authUrl}}/login HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+
+{
+  "email": "{{testEmail}}",
+  "password": "{{testPassword}}"
+}
+
+###
+
+### 6. Account Login - Wrong Password Rejection
+# @name loginWrongPassword
+# Expected Response:
+#   HTTP/1.1 401 Unauthorized
+#   {
+#     "success": false,
+#     "errorCode": "INVALID_CREDENTIALS"
+#   }
+POST {{authUrl}}/login HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+
+{
+  "email": "{{testEmail}}",
+  "password": "WrongPassword999!"
+}
+
+###
+
+### 7. Account Login - Unknown User Rejection
+# @name loginUnknownUser
+# Expected Response:
+#   HTTP/1.1 401 Unauthorized
+#   {
+#     "success": false,
+#     "errorCode": "INVALID_CREDENTIALS"
+#   }
+POST {{authUrl}}/login HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+
+{
+  "email": "nonexistent.user.999@example.com",
+  "password": "{{testPassword}}"
+}
+
+###
+
+### 8. Session Renewal - Protocol 17 Silent Refresh (Rotates HttpOnly Cookies)
+# @name refreshSuccess
+# Expected Response:
+#   HTTP/1.1 200 OK
+#   Set-Cookie: accessToken=...; Path=/; HttpOnly; SameSite=Lax
+#   Set-Cookie: refreshToken=...; Path=/; HttpOnly; SameSite=Lax
+#   {
+#     "success": true,
+#     "message": "Session renewed successfully.",
+#     "data": {
+#       "user": { "email": "operon.architect@example.com" }
+#     }
+#   }
+POST {{authUrl}}/refresh HTTP/1.1
+Accept: application/json
+
+###
+
+### 9. Session Renewal - Missing Token Rejection
+# @name refreshMissingToken
+# Expected Response:
+#   HTTP/1.1 401 Unauthorized
+POST {{authUrl}}/refresh HTTP/1.1
+Accept: application/json
+Cookie: accessToken=invalid; refreshToken=
+
+###
+
+### 9a. Google SSO Initiation (Protocol 34)
+# @name googleSsoInitiate
+# Expected Response:
+#   HTTP/1.1 302 Found
+#   Location: https://accounts.google.com/o/oauth2/v2/auth?...
+GET {{authUrl}}/google/sso HTTP/1.1
+Accept: text/html,application/xhtml+xml
+
+###
+
+### 9b. Google SSO Callback - Mock Code Flow (Positive)
+# @name googleSsoCallbackSuccess
+# Expected Response:
+#   HTTP/1.1 302 Found
+#   Location: .../dashboard
+GET {{authUrl}}/google/sso/callback?code={{mockGoogleCode}} HTTP/1.1
+Accept: application/json
+
+###
+
+### 9c. Google SSO Callback - Missing Code Rejection (Negative)
+# @name googleSsoCallbackMissingCode
+# Expected Response:
+#   HTTP/1.1 302 Found
+#   Location: .../login?error=ACCESS_DENIED
+GET {{authUrl}}/google/sso/callback HTTP/1.1
+Accept: application/json
+
+###
+
+### ============================================================================
+### USER DOMAIN TESTS (/api/v1/users)
+### ============================================================================
+
+### 10. User Profile - Positive Authenticated Retrieval (Protocol 21, 60)
+# @name getProfileSuccess
+# Expected Response:
+#   HTTP/1.1 200 OK
+#   {
+#     "success": true,
+#     "data": {
+#       "user": {
+#         "email": "operon.architect@example.com",
+#         "firstName": "Operon",
+#         "lastName": "Architect"
+#       }
+#     }
+#   }
+GET {{usersUrl}}/profile HTTP/1.1
+Accept: application/json
+
+###
+
+### 11. User Profile - Unauthenticated Rejection
+# @name getProfileUnauthenticated
+# Expected Response:
+#   HTTP/1.1 401 Unauthorized
+GET {{usersUrl}}/profile HTTP/1.1
+Accept: application/json
+Cookie: accessToken=; refreshToken=
+
+###
+
+### 12. Protocol 44 - Verify Purge of Legacy /me Alias
+# @name legacyMePurged
+# Expected Response:
+#   HTTP/1.1 404 Not Found
+GET {{usersUrl}}/me HTTP/1.1
+Accept: application/json
+
+###
+
+### 13. User Profile - Positive Update (Protocol 60: via req.validated.body)
+# @name updateProfileSuccess
+# Expected Response:
+#   HTTP/1.1 200 OK
+#   {
+#     "success": true,
+#     "message": "Profile updated successfully.",
+#     "data": {
+#       "user": {
+#         "firstName": "Chief",
+#         "lastName": "Architect",
+#         "position": "Lead Implementation Engineer"
+#       }
+#     }
+#   }
+PATCH {{usersUrl}}/profile HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+
+{
+  "firstName": "Chief",
+  "lastName": "Architect",
+  "position": "Lead Implementation Engineer"
+}
+
+###
+
+### 14. User Profile - Forbidden Fields Injection Rejected
+# @name updateProfileForbiddenFields
+# Expected Response:
+#   HTTP/1.1 422 Unprocessable Content
+#   {
+#     "success": false,
+#     "errorCode": "VALIDATION_ERROR"
+#   }
+PATCH {{usersUrl}}/profile HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+
+{
+  "role": "superadmin",
+  "isArchived": true
+}
+
+###
+
+### 15. User Avatar - Positive Cloudinary Asset Reference Update (Protocol 43, 60)
+# @name updateAvatarSuccess
+# Expected Response:
+#   HTTP/1.1 200 OK
+#   {
+#     "success": true,
+#     "message": "Avatar updated successfully.",
+#     "data": {
+#       "avatar": "https://res.cloudinary.com/operon/image/upload/v12345/avatars/user123.png",
+#       "avatarPublicId": "avatars/user123"
+#     }
+#   }
+PATCH {{usersUrl}}/avatar HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+
+{
+  "avatar": "https://res.cloudinary.com/operon/image/upload/v12345/avatars/user123.png",
+  "avatarPublicId": "avatars/user123"
+}
+
+###
+
+### 16. User Avatar - Positive Avatar Removal
+# @name removeAvatarSuccess
+# Expected Response:
+#   HTTP/1.1 200 OK
+#   {
+#     "success": true,
+#     "message": "Avatar removed successfully.",
+#     "data": {
+#       "avatar": null,
+#       "avatarPublicId": null
+#     }
+#   }
+DELETE {{usersUrl}}/avatar HTTP/1.1
+Accept: application/json
+
+###
+
+### 17. User Password - Positive Password Change (Protocol 60: via req.validated.body)
+# @name changePasswordSuccess
+# Expected Response:
+#   HTTP/1.1 200 OK
+#   {
+#     "success": true,
+#     "message": "Password updated successfully."
+#   }
+PATCH {{usersUrl}}/password HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+
+{
+  "currentPassword": "{{testPassword}}",
+  "newPassword": "{{newPassword}}",
+  "confirmNewPassword": "{{newPassword}}"
+}
+
+###
+
+### 18. User Password - Incorrect Current Password Rejection
+# @name changePasswordWrongCurrent
+# Expected Response:
+#   HTTP/1.1 401 Unauthorized
+#   {
+#     "success": false,
+#     "errorCode": "INVALID_CREDENTIALS"
+#   }
+PATCH {{usersUrl}}/password HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+
+{
+  "currentPassword": "WrongCurrentPassword123!",
+  "newPassword": "AnotherPassword456!",
+  "confirmNewPassword": "AnotherPassword456!"
+}
+
+###
+
+### 19. Agent Configuration - Positive Retrieval
+# @name getAgentConfigSuccess
+# Expected Response:
+#   HTTP/1.1 200 OK
+#   {
+#     "success": true,
+#     "data": {
+#       "agentConfig": { ... },
+#       "directives": { ... }
+#     }
+#   }
+GET {{usersUrl}}/agent-config HTTP/1.1
+Accept: application/json
+
+###
+
+### 20. Agent Configuration - Positive Update (Protocol 60: via req.validated.body)
+# @name updateAgentConfigSuccess
+# Expected Response:
+#   HTTP/1.1 200 OK
+#   {
+#     "success": true,
+#     "message": "Agent configuration updated successfully.",
+#     "data": {
+#       "agentConfig": {
+#         "persona": "Strategic Technical Advisor",
+#         "defaultProvider": "google",
+#         "defaultModel": "gemini-3.8-flash",
+#         "defaultThinkingBudget": 4096,
+#         "defaultLanguage": "en"
+#       }
+#     }
+#   }
+PATCH {{usersUrl}}/agent-config HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+
+{
+  "persona": "Strategic Technical Advisor",
+  "defaultProvider": "google",
+  "defaultModel": "gemini-3.8-flash",
+  "defaultThinkingBudget": 4096,
+  "defaultLanguage": "en"
+}
+
+###
+
+### 20b. Agent Configuration - Switch to Regional Addis AI Foundation Model (Protocol 63)
+# @name updateAgentConfigAddisSuccess
+# Expected Response:
+#   HTTP/1.1 200 OK
+#   {
+#     "success": true,
+#     "message": "Agent configuration updated successfully.",
+#     "data": {
+#       "agentConfig": {
+#         "defaultProvider": "addis",
+#         "defaultModel": "addis-1",
+#         "defaultThinkingBudget": 0
+#       }
+#     }
+#   }
+PATCH {{usersUrl}}/agent-config HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+
+{
+  "defaultProvider": "addis",
+  "defaultModel": "addis-1"
+}
+
+###
+
+### 20c. Agent Configuration - Mismatched Provider/Model Pair Rejection (Protocol 18, 63)
+# @name updateAgentConfigMismatchedRejected
+# Expected Response:
+#   HTTP/1.1 422 Unprocessable Content
+#   {
+#     "success": false,
+#     "errorCode": "VALIDATION_ERROR"
+#   }
+PATCH {{usersUrl}}/agent-config HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+
+{
+  "defaultProvider": "google",
+  "defaultModel": "addis-1"
+}
+
+###
+
+### 21. User Directives - Protocol 37 Canonical Naming (Protocol 60: via req.validated.body)
+# @name updateDirectivesSuccess
+# Expected Response:
+#   HTTP/1.1 200 OK
+#   {
+#     "success": true,
+#     "data": {
+#       "directives": {
+#         "userInstructions": ["Prioritize architectural clarity", "Enforce strict typing"],
+#         "negativeVocabulary": ["legacy", "shim", "deprecated"],
+#         "phraseMappings": { "asap": "high priority", "wip": "work in progress" }
+#       }
+#     }
+#   }
+PATCH {{usersUrl}}/directives HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+
+{
+  "userInstructions": ["Prioritize architectural clarity", "Enforce strict typing"],
+  "negativeVocabulary": ["legacy", "shim", "deprecated"],
+  "phraseMappings": {
+    "asap": "high priority",
+    "wip": "work in progress"
+  }
+}
+
+###
+
+### 22. User Directives - Legacy customInstructions Naming Rejection
+# @name updateDirectivesLegacyRejected
+# Expected Response:
+#   HTTP/1.1 422 Unprocessable Content
+#   {
+#     "success": false,
+#     "errorCode": "VALIDATION_ERROR"
+#   }
+PATCH {{usersUrl}}/directives HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+
+{
+  "customInstructions": ["This should fail"]
+}
+
+###
+
+### 23. Unified Agent Configuration & BYOK Credentials - Protocol 22 & 70 (Protocol 60: via req.validated.body)
+# @name updateAgentConfigApiKeysSuccess
+# Expected Response:
+#   HTTP/1.1 200 OK
+#   {
+#     "success": true,
+#     "message": "Agent configuration updated successfully.",
+#     "data": {
+#       "agentConfig": { ... },
+#       "apiKeys": {
+#         "hasGeminiKey": true,
+#         "hasAddisKey": true
+#       }
+#     }
+#   }
+PATCH {{usersUrl}}/agent-config HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+
+{
+  "apiKeys": {
+    "geminiApiKey": "AIzaSyTestApiKey1234567890",
+    "addisApiKey": "addis_sk_live_test_secret_key"
+  }
+}
+
+###
+
+### 23a. Standalone /api-keys Route Purged - Protocol 70 Rejection (404 Not Found)
+# @name updateApiKeysPurged
+# Expected Response:
+#   HTTP/1.1 404 Not Found
+PATCH {{usersUrl}}/api-keys HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+
+{
+  "geminiApiKey": "AIzaSyTestApiKey1234567890"
+}
+
+###
+
+### 24. Telegram Connector - Status (Protocol 66 Canonical Hierarchy)
+# @name telegramStatus
+# Expected Response:
+#   HTTP/1.1 200 OK
+#   {
+#     "success": true,
+#     "data": { "connected": false, "enabled": true }
+#   }
+GET {{usersUrl}}/integrations/telegram/status HTTP/1.1
+Accept: application/json
+
+###
+
+### 25. Telegram Connector - Deterministic Negative Token Verification
+# @name verifyTelegramNegative
+# Expected Response:
+#   HTTP/1.1 400 Bad Request
+#   {
+#     "success": false,
+#     "errorCode": "BAD_REQUEST"
+#   }
+POST {{usersUrl}}/integrations/telegram/verify HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+
+{
+  "botToken": "invalid:token"
+}
+
+###
+
+### 26. Telegram Connector - Positive Connection & ID Normalization (Protocol 60, 66)
+# @name connectTelegramSuccess
+# Expected Response:
+#   HTTP/1.1 200 OK
+#   {
+#     "success": true,
+#     "data": {
+#       "telegram": {
+#         "connected": true,
+#         "botUsername": "operon_ops_bot",
+#         "managementChatId": "-100ops_management",
+#         "maintenanceChatId": "1234567890"
+#       }
+#     }
+#   }
+PATCH {{usersUrl}}/integrations/telegram/connect HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+
+{
+  "botToken": "123456789:ABCdefGHIjklMNOpqrSTUvwxYZ",
+  "botUsername": "operon_ops_bot",
+  "managementChatId": "@ops_management",
+  "maintenanceChatId": "1234567890",
+  "defaultFormat": "text"
+}
+
+###
+
+### 27. Telegram Connector - Positive Toggle (Protocol 60, 66: via req.validated.body)
+# @name toggleTelegramSuccess
+# Expected Response:
+#   HTTP/1.1 200 OK
+#   {
+#     "success": true,
+#     "data": { "enabled": false }
+#   }
+PATCH {{usersUrl}}/integrations/telegram/toggle HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+
+{
+  "enabled": false
+}
+
+###
+
+### 28. Telegram Connector - Positive Disconnect (Protocol 66)
+# @name disconnectTelegramSuccess
+# Expected Response:
+#   HTTP/1.1 200 OK
+#   {
+#     "success": true,
+#     "message": "Telegram integration disconnected successfully."
+#   }
+POST {{usersUrl}}/integrations/telegram/disconnect HTTP/1.1
+Accept: application/json
+
+###
+
+### 29. Google Drive Integration - Status (Protocol 34, 66)
+# @name googleDriveStatus
+# Expected Response:
+#   HTTP/1.1 200 OK
+#   {
+#     "success": true,
+#     "data": { "connected": false, "enabled": true }
+#   }
+GET {{usersUrl}}/integrations/google-drive/status HTTP/1.1
+Accept: application/json
+
+###
+
+### 30. Google Drive Integration - Toggle (Protocol 34, 60, 66: via req.validated.body)
+# @name toggleGoogleDrive
+# Expected Response:
+#   HTTP/1.1 200 OK
+#   {
+#     "success": true,
+#     "data": { "enabled": false }
+#   }
+PATCH {{usersUrl}}/integrations/google-drive/toggle HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+
+{
+  "enabled": false
+}
+
+###
+
+### 31. Google Drive Integration - Disconnect (Protocol 34, 66)
+# @name disconnectGoogleDrive
+# Expected Response:
+#   HTTP/1.1 200 OK
+#   {
+#     "success": true,
+#     "message": "Google Drive integration disconnected successfully."
+#   }
+POST {{usersUrl}}/integrations/google-drive/disconnect HTTP/1.1
+Accept: application/json
+
+###
+
+### 32. Cloudinary Integration - Status (Protocol 43, 66)
+# @name cloudinaryStatus
+# Expected Response:
+#   HTTP/1.1 200 OK
+#   {
+#     "success": true,
+#     "data": { "connected": false, "enabled": true }
+#   }
+GET {{usersUrl}}/integrations/cloudinary/status HTTP/1.1
+Accept: application/json
+
+###
+
+### 33. Cloudinary Integration - Deterministic Negative Credential Verification
+# @name verifyCloudinaryNegative
+# Expected Response:
+#   HTTP/1.1 400 Bad Request
+#   {
+#     "success": false,
+#     "errorCode": "BAD_REQUEST"
+#   }
+POST {{usersUrl}}/integrations/cloudinary/verify HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+
+{
+  "cloudName": "invalid",
+  "apiKey": "invalid",
+  "apiSecret": "invalid"
+}
+
+###
+
+### 34. Cloudinary Integration - Positive Connection (Protocol 22, 60, 66)
+# @name connectCloudinarySuccess
+# Expected Response:
+#   HTTP/1.1 200 OK
+#   {
+#     "success": true,
+#     "message": "Cloudinary integration connected successfully."
+#   }
+PATCH {{usersUrl}}/integrations/cloudinary/connect HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+
+{
+  "cloudName": "operon-cloud",
+  "apiKey": "123456789012345",
+  "apiSecret": "abcdefghijklmnopqrstuvwxyz12345"
+}
+
+###
+
+### 35. Cloudinary Integration - Positive Toggle (Protocol 60, 66: via req.validated.body)
+# @name toggleCloudinarySuccess
+# Expected Response:
+#   HTTP/1.1 200 OK
+#   {
+#     "success": true,
+#     "data": { "enabled": false }
+#   }
+PATCH {{usersUrl}}/integrations/cloudinary/toggle HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+
+{
+  "enabled": false
+}
+
+###
+
+### 36. Cloudinary Integration - Positive Disconnect (Protocol 66)
+# @name disconnectCloudinarySuccess
+# Expected Response:
+#   HTTP/1.1 200 OK
+#   {
+#     "success": true,
+#     "message": "Cloudinary integration disconnected successfully."
+#   }
+POST {{usersUrl}}/integrations/cloudinary/disconnect HTTP/1.1
+Accept: application/json
+
+###
+
+### 37. Session Invalidation - Positive Logout (Protocol 17 & 42: Purges Cookies)
+# @name logoutSuccess
+# Expected Response:
+#   HTTP/1.1 200 OK
+#   Set-Cookie: accessToken=; Max-Age=0
+#   Set-Cookie: refreshToken=; Max-Age=0
+#   {
+#     "success": true,
+#     "message": "Logged out successfully."
+#   }
+POST {{authUrl}}/logout HTTP/1.1
+Accept: application/json
+
+###
+
+### 38. Account Deletion - Wrong Password Confirmation Rejection
+# @name deleteAccountWrongPassword
+# Expected Response:
+#   HTTP/1.1 401 Unauthorized
+#   {
+#     "success": false,
+#     "errorCode": "INVALID_CREDENTIALS"
+#   }
+DELETE {{usersUrl}}/account HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+
+{
+  "password": "WrongDeletionPassword123!"
+}
+
+###
+
+### 39. Account Deletion - Protocol 42 Three-Tier Account Deletion (Positive)
+# @name deleteAccountSuccess
+# Expected Response:
+#   HTTP/1.1 200 OK
+#   {
+#     "success": true,
+#     "message": "User account and all associated resources permanently deleted."
+#   }
+DELETE {{usersUrl}}/account HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+
+{
+  "password": "{{newPassword}}"
+}
+
+###

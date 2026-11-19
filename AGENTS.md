@@ -22,7 +22,7 @@ You possess full operational awareness of the codebase structure and authoritati
 
 | Context Resource | Location | Operational Mandate & Usage |
 | :--- | :--- | :--- |
-| **Governing Protocols** | `docs/Governing-rules.md` | Contains the 59 immutable governing rules. Every route, schema, component, hook, service, and state interaction you design must strictly comply with these protocols without exception. |
+| **Governing Protocols** | `docs/Governing-rules.md` | Contains the 71 immutable governing rules. Every route, schema, component, hook, service, and state interaction you design must strictly comply with these protocols without exception. |
 | **V0 Backend Codebase** | `docs/Backend-Personal-AI-Agent-V0-Codebase.md` | Contains 61 backend files from V0. Serves as the functional, domain, and business logic reference. Treat its architecture as an anti-pattern baseline to be completely re-implemented. |
 | **V0 Client Codebase** | `docs/Client-Personal-AI-Agent-V0-Codebase.md` | Contains 153 client files from V0. Serves as the user experience, layout, screen flow, and interface baseline. Treat its state management and component couplings as anti-patterns to be re-engineered. |
 | **Agent Intelligence & Skills** | `.agents/*` | Workspace domain skills, orchestration patterns, persistence backends, and superpowers workflows (`deep-agents-*`, `langchain-*`, `langgraph-*`, `superpowers`). You must discover and invoke these specialized skills before implementing solutions. |
@@ -32,9 +32,9 @@ You possess full operational awareness of the codebase structure and authoritati
 
 ---
 
-## 3. Core Architectural Invariants & Governing Rules (The 59 Protocols)
+## 3. Core Architectural Invariants & Governing Rules (The 71 Protocols)
 
-You strictly enforce all 59 Governing Protocols detailed in `docs/Governing-rules.md`. Below are the critical architectural pillars that govern every line of code you plan and implement:
+You strictly enforce all 71 Governing Protocols detailed in `docs/Governing-rules.md`. Below are the critical architectural pillars that govern every line of code you plan and implement:
 
 ### 3.1. LangGraph Authority & Conversational State Machine (Protocols 46, 51, 52, 53, 54, 58)
 - **Strict State Graph Runtime:** Conversational intelligence, reasoning, tool execution, and memory in the backend are orchestrated exclusively through native LangChain and LangGraph state graphs (`StateGraph`) compiled with durable checkpointers mapped to unique thread identifiers.
@@ -50,10 +50,12 @@ You strictly enforce all 59 Governing Protocols detailed in `docs/Governing-rule
 - **Conversational Runtime Boundary (Headless Chat Adapter):** The dedicated headless chat adapter context is the single authoritative owner of the active conversation turn, live token accumulation, real-time typing buffers, thought disclosure accordions, and interactive approval cards.
 - **Zero Conflict Contract:** Streaming chunks bypass global state entirely and render via localized high-frequency subscribers to guarantee zero re-render cascades, 0ms input latency, and 60fps interface fluidity.
 
-### 3.3. Authentication, Security & Isolation (Protocols 17, 21, 22, 32, 33, 38, 42)
+### 3.3. Authentication, Security & Isolation (Protocols 17, 21, 22, 32, 33, 38, 42, 61, 64)
 - **Silent Refresh & Single-Flight Mutex (Protocol 17):** Dual-token lifecycle using short-lived access tokens (15m) and long-lived refresh tokens (7d) delivered exclusively through secure, `HttpOnly`, `SameSite=Lax/Strict` cookies. All client refresh requests serialize through a single-flight mutex (`authClient.js`) to eliminate token rotation race conditions.
+- **Pure Cookie-Based Authentication Transport & Zero Token Exposure in JSON Payloads (Protocol 61):** Authentication tokens (`accessToken`, `refreshToken`) are delivered and rotated exclusively through secure, `HttpOnly`, `SameSite=Lax/Strict` cookies. Controllers, endpoints, and error handlers NEVER return or expose token strings within JSON response payloads. Downstream consumers resolve identity exclusively via `req.cookies`.
 - **Strict Single-User Isolation & IDOR Prevention (Protocol 21):** Every server endpoint, service method, and database query is strictly scoped to the authenticated user ID (`req.user.id`). Client-supplied user IDs in bodies or parameters are ignored. Cross-user or nonexistent resources return uniform HTTP 404 responses.
-- **Envelope-Encrypted BYOK Credentials (Protocol 22):** User-supplied API keys (Gemini, Addis AI) and connector tokens (Google Drive, Telegram) are envelope-encrypted with authenticated symmetric encryption (AES-256-GCM) at rest in MongoDB, excluded from default queries, and stripped from client payloads.
+- **Envelope-Encrypted BYOK Credentials (Protocol 22):** User-supplied API keys (Gemini, Addis AI) and connector tokens (Google Drive, Telegram, Cloudinary) are envelope-encrypted with authenticated symmetric encryption (AES-256-GCM) at rest in MongoDB, excluded from default queries, and stripped from client payloads.
+- **Strict BYOK Production Isolation & Safe Dev Fallbacks (Protocol 64):** Server `.env` files in production never hold shared API keys or connector secrets. All credentials are user-provided BYOK and envelope-encrypted (AES-256-GCM) at rest. Dev keys fail open/optional with safe defaults so their absence in production never crashes the server. Production environments warn if explicit `ENCRYPTION_KEY` is not set.
 - **Minimal Registration Payload (Protocols 32, 38):** Registration endpoint accepts strictly `{ email, password }`. Names are deterministically derived from email local parts. Profile metadata is managed exclusively post-registration.
 - **Toast-Driven Auth Errors (Protocol 33):** Authentication/authorization errors on public forms surface exclusively via non-intrusive toast notifications. Login/Register forms remain clean with zero persistent alert banners.
 - **Three-Tier Account Deletion (Protocol 42):** 1) Data & Storage Tier purges user records, threads, messages, and cloud storage assets; 2) HTTP Session Tier clears cookies; 3) Client State Tier resets caches and redirects to landing.
@@ -62,11 +64,12 @@ You strictly enforce all 59 Governing Protocols detailed in `docs/Governing-rule
 - **Cloud Media Storage Exclusivity (Protocol 43):** All avatars, conversational attachments, and generated media persist directly to dedicated cloud media storage (Cloudinary / Google Drive). Storing user files on the local application server filesystem or exposing static unauthenticated `/uploads` directories is strictly forbidden. Unconfigured storage fails closed.
 - **Pristine Multimodal Asset Preservation (Protocol 55):** Original binary assets in cloud storage are immutable. Visual assets pass natively into multimodal context, documents undergo immediate server-side text extraction for grounded prompt context, and audio recordings remain acoustic ground truth alongside STT transcripts.
 
-### 3.5. Authoritative Foundation Models & Regional Speech (Protocols 28, 47)
-- **Supported Models Only (Protocol 28):**
+### 3.5. Authoritative Foundation Models & Regional Speech (Protocols 28, 47, 63)
+- **Supported Models & Multi-Provider Architecture (Protocols 28, 63):**
   - Google Gemini: `gemini-3.1-flash-lite` (Default / High Speed), `gemini-3.8-flash` (Pro / Deep Reasoning), `gemini-3-flash-preview` (Fallback / Preview).
   - Addis AI: `addis-1` (Native Amharic Fidel foundation model).
   - Legacy models (`gemini-2.5-*`) and phantom endpoints (`gemini-3.5-flash`) are strictly prohibited.
+  - Multi-provider AI namespacing (`google`, `addis`), provider-level model registries, upstream API configurations, and 1-to-1 constants parity across server and client.
 - **Multilingual Speech Pipeline (Protocol 47):** Addis STT for native Amharic script transcription with multimodal audio fallback. Addis TTS for speech synthesis with dynamic voice catalog resolution and client-side audio caching.
 
 ### 3.6. UI/UX Consistency & Material UI Guidelines (Protocols 4, 5, 6, 7, 9, 10, 13, 14, 15, 29, 41)
@@ -79,9 +82,18 @@ You strictly enforce all 59 Governing Protocols detailed in `docs/Governing-rule
 - **Accessibility (Protocol 15):** Zero ARIA violations, clean focus restoration, background inertness during modal/dialog/drawer overlays.
 - **Explicit Display Names (Protocol 29):** All forwarded ref components must declare `displayName`. No `prop-types` package; use JSDoc contracts exclusively.
 
-### 3.7. Code Quality, Validation & Testing (Protocols 8, 18, 19, 20, 24, 25, 27, 30, 31, 35, 36, 39, 40, 44, 45, 59)
+### 3.7. Code Quality, Validation, Testing & Integrations (Protocols 8, 18, 19, 20, 24, 25, 27, 30, 31, 35, 36, 39, 40, 44, 45, 59, 60, 61, 62, 65, 66, 67, 68, 69, 70, 71)
 - **Universal Constants Centralization & 1-to-1 Parity (Protocols 8, 27):** Zero magic literals. All endpoints, validation bounds, storage limits, and enums are defined in centralized constants modules with 1-to-1 parity between backend and client.
 - **Unified Schema Validation via Zod (Protocols 18, 39, 40):** Zod schemas validate all HTTP request bodies, query parameters, structured agent outputs, and tool schemas. Validation middleware is mounted before all controller handlers.
+- **Strict Validated Data Access via req.validated (Protocol 60):** Controllers and downstream request handlers must strictly consume validated and sanitized payloads from `req.validated.body`, `req.validated.query`, and `req.validated.params` populated by schema validation middleware. Direct access to unvalidated `req.body`, `req.query`, or `req.params` in controllers is strictly prohibited.
+- **Defensive Error Handling for Malformed Client Payloads (Protocol 62):** The server application intercepts malformed client payloads and body-parser syntax errors at the middleware boundary, returning standardized HTTP 400 (`MALFORMED_JSON`) JSON error envelopes without unhandled exceptions. All `.http` / `.rest` test files strictly enforce valid JSON formatting without foreign trailing characters.
+- **Universal User Terminology (Protocol 65):** The application is a Personal AI Agent; all references to user instructions and directives universally use "user" with absolute prohibition of legacy "supervisor" nomenclature.
+- **Canonical RESTful Integrations Hierarchy & Uniform Lifecycle Operations (Protocols 34, 66):** All third-party connectors (Telegram, Google Drive, Cloudinary) symmetrically mount under `/integrations/:service/*` with uniform status, verify, connect, toggle, and disconnect endpoints sharing a unified toggle schema.
+- **Prohibition of Trivial Primitive Constants (Protocol 67):** Zero meaningless exported empty constants (such as `DEFAULT_POSITION = ''`). Default schema attributes reside directly in Mongoose models and services.
+- **Dual-Modality Test Architecture & Guaranteed Teardown Hygiene (Protocol 68):** Testing segregates cleanly into interactive REST Client suites (`tests/http/*.http`) and automated headless suites (`tests/integration/*.test.js`) executed via Node.js native test runner (`node:test`) against dynamic ephemeral servers (`app.listen(0)`) and live MongoDB Atlas instances (zero unit mocks). Guaranteed teardown hygiene ensures test domain records (`*@operon-test.local`) are purged in pre-flight and post-test `try/finally` blocks with zero residual leakage.
+- **Pure Provider-Namespaced AI Foundation Models & Clean Platform Defaults (Protocol 69):** `AI_MODELS` strictly namespaced by provider keys (`[AI_PROVIDERS.GOOGLE]`, `[AI_PROVIDERS.ADDIS]`) at root with zero top-level fallback aliases. Global supported models exported as `SUPPORTED_AI_MODELS`, dynamic model-to-provider derivation via `MODEL_PROVIDER_MAP`, and clean platform references in `CHAT_CONSTANTS`.
+- **Unified Agent Configuration & BYOK Route Consolidation (Protocol 70):** Bring-Your-Own-Key credentials (Gemini, Addis AI) are consolidated directly into `PATCH /api/v1/users/agent-config` via optional `apiKeys` sub-object with AES-256-GCM envelope encryption at rest. Standalone `/api-keys` endpoints are permanently purged (returning HTTP 404).
+- **Universal JSDoc Consistency & Strong Type Contracts (Protocol 71):** Comprehensive standardized JSDoc annotations across all non-theme files in backend and client runtimes. Routers are explicitly typed (`@type {import('express').Router}`) with fully documented endpoints (`@route`, `@access`, `@middleware`, `@controller`, `@governs`). Validation schemas are typed (`@type {import('zod').ZodObject<any>}`) with exported inferred input types (`@typedef {import('zod').infer<typeof schema>} InputType`). Domain models, config, and React shell components declare explicit types and return signatures.
 - **Single Canonical Handlers (Protocols 31, 35, 44):** Single canonical identifier per handler. No controller re-exports of utilities. No legacy compatibility shims or aliases.
 - **Standardized JSDoc (Protocols 20, 36):** Comprehensive JSDoc on every module, controller, service, middleware, hook, slice, and component.
 - **Deterministic Vertical-Slice Testing via REST Client (`.http`/`.rest`) (Protocol 24):** End-to-end HTTP tests validate live server endpoints, middleware, validation, controller logic, state graph execution, real MongoDB queries, and response headers/cookies. Redundant unit mocks are forbidden.
@@ -116,7 +128,7 @@ Whenever the Product Owner assigns a task, you will strictly follow this phased,
         ▼
 [Phase 2: Task-Specific Multi-Dimensional Analysis]
   • Audit V0 historical code (extract logic, catalog defects & anti-patterns)
-  • Cross-reference all applicable Governing Protocols (Rules 1-59)
+  • Cross-reference all applicable Governing Protocols (Rules 1-71)
   • Consult specialized .agents/* domain skills
   • Inspect existing clean-slate codebase (backend/*, client/*)
   • Define precise Zod schemas, JSDoc contracts, and constants
@@ -140,7 +152,7 @@ Whenever the Product Owner assigns a task, you will strictly follow this phased,
                     ▼
 [Phase 5: Phased Clean-Slate Implementation & Deterministic Verification]
   • Step-by-step implementation adhering strictly to approved plan
-  • Author and run live REST Client (.http / .rest) vertical-slice tests
+  • Author and run dual-modality tests: live REST Client (.http) and automated headless tests (node:test) with guaranteed teardown hygiene (Protocols 24, 68)
   • Run static linting (npm run lint) -> 0 errors, 0 warnings
   • Run production build (npm run build) -> 0 errors
         │
@@ -157,7 +169,7 @@ Whenever the Product Owner assigns a task, you will strictly follow this phased,
 ### Phase 0: Exhaustive Repository Baseline Ingestion & Ready Confirmation Gate
 When this master prompt is first provided to you:
 1. **Super Deep Repository Ingestion:**
-   - **`docs/*`:** Ingest all 59 protocols in `Governing-rules.md`, all 61 backend files in `Backend-Personal-AI-Agent-V0-Codebase.md`, and all 153 client files in `Client-Personal-AI-Agent-V0-Codebase.md`.
+   - **`docs/*`:** Ingest all 71 protocols in `Governing-rules.md`, all 61 backend files in `Backend-Personal-AI-Agent-V0-Codebase.md`, and all 153 client files in `Client-Personal-AI-Agent-V0-Codebase.md`.
    - **`backend/*`:** Inspect directory tree, dependencies (`backend/package.json`), scripts (`verifyCodebase.js`, `killPort.js`), server entry points (`server.js`, `app.js`), environment configuration (`.env` with Atlas replica set, JWT secrets, and BYOK credentials).
    - **`client/*`:** Inspect directory tree, dependencies (`client/package.json`), build configuration (`vite.config.js`, `eslint.config.js`), entry points (`index.html`, `main.jsx`, `App.jsx`), theme system (`src/theme/AppTheme.jsx`, `themePrimitives.js`, and all 8 customization modules), and assets (`src/assets/`).
    - **Root Level Files:** Audit root `package.json` workspaces (`backend`, `client`), scripts (`dev`, `verify`), `package-lock.json`, `skills-lock.json`, `.gitignore`, `README.md`, `AGENTS.md`, and `MASTER_PROMPT.md`.
@@ -167,7 +179,7 @@ When this master prompt is first provided to you:
 3. **Explicit Ready Confirmation:**
    - You will present a concise, high-level summary of the repository's baseline state to the Product Owner.
    - You will explicitly declare:
-     > **"I have completed an exhaustive, super deep analysis across `docs/*`, `backend/*`, `client/*`, `.agents/*`, and all root-level project configurations. I have internalized all 59 Governing Protocols, the V0 baseline capabilities and fatal flaws, and the clean-slate V1 workspace structure. I have touched NO code. I am confirmed 100% READY. Please point out the target file(s) or functional area to begin Phase 1."**
+     > **"I have completed an exhaustive, super deep analysis across `docs/*`, `backend/*`, `client/*`, `.agents/*`, and all root-level project configurations. I have internalized all 71 Governing Protocols, the V0 baseline capabilities and fatal flaws, and the clean-slate V1 workspace structure. I have touched NO code. I am confirmed 100% READY. Please point out the target file(s) or functional area to begin Phase 1."**
    - You will **HALT** and wait for the Product Owner's direction before doing anything else.
 
 ### Phase 1: Input Recognition & Scope Identification
@@ -181,7 +193,7 @@ You will immediately identify all related server and client modules, database sc
 ### Phase 2: Task-Specific Multi-Dimensional Analysis
 Before proposing any plan, you will perform an exhaustive analysis across five dimensions:
 1. **Historical V0 Audit:** Read exact code from reference docs; extract domain boundaries, business logic, schemas, and catalog defects.
-2. **Governing Protocols Cross-Reference:** Cross-reference against all 59 Governing Protocols in `docs/Governing-rules.md`.
+2. **Governing Protocols Cross-Reference:** Cross-reference against all 71 Governing Protocols in `docs/Governing-rules.md`.
 3. **Domain Intelligence & Workspace Skills Consultation:** Discover and invoke relevant `.agents/*` skills (`langgraph-fundamentals`, `langgraph-persistence`, `langgraph-human-in-the-loop`, `deep-agents-memory`, `writing-plans`).
 4. **Current Workspace Inspection:** Inspect existing code in `backend/*` and `client/*` to ensure full structural cohesion and 1-to-1 constants parity.
 5. **Contract Definition:** Draft strict Zod schemas, JSDoc interface types, HTTP status codes, and decoupled state boundaries.
@@ -191,7 +203,7 @@ You will synthesize your analysis into a formal Markdown implementation plan cre
 The artifact must contain:
 1. Executive Summary & Scope
 2. Historical V0 Analysis & Defect Remediation
-3. Governing Protocols Matrix (Rules 1-59)
+3. Governing Protocols Matrix (Rules 1-71)
 4. Architectural Blueprint & Technical Specifications
 5. Step-by-Step Implementation Strategy
 6. Deterministic Verification Matrix (REST Client `.http`/`.rest`, Lint, Build)
@@ -218,7 +230,7 @@ Upon receiving explicit approval, you will execute the implementation strictly f
 - Ensure live chat streaming operates exclusively through the localized headless adapter, keeping Redux free of streaming token dispatches (Protocols 16, 50, 58).
 
 ### Deterministic Quality Verification:
-1. Author and execute live REST Client (`.http` / `.rest`) vertical-slice tests against the server (Protocol 24).
+1. **Dual-Modality Vertical-Slice Testing (Protocols 24, 68):** Author and execute live REST Client (`.http` / `.rest`) test suites under `tests/http/` and automated headless test suites under `tests/integration/` via Node.js native test runner (`node:test`, `node:assert/strict`) against dynamic ephemeral servers (`app.listen(0)`) and live MongoDB Atlas instances (zero unit mocks) with guaranteed teardown hygiene (`purgeTestUsers`).
 2. Run `npm run verify --workspace=backend` for static syntax and environment checks.
 3. Run `npm run lint --workspace=client` to ensure zero ESLint errors and zero warnings (Protocol 30).
 4. Run `npm run build --workspace=client` to ensure zero Vite bundler errors (Protocol 45).

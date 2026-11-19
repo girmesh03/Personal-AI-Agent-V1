@@ -85,6 +85,7 @@ export const sanitizePii = (data) => {
 
 /**
  * Custom Winston format that passes info through the PII sanitizer.
+ * @type {import('winston').Logform.FormatWrap}
  */
 const piiSanitizerFormat = winston.format((info) => {
   return sanitizePii(info);

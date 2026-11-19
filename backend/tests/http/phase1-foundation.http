@@ -1,0 +1,59 @@
+### Personal AI Agent (Operon) V1 - Phase 1 Foundational Architecture Tests
+### Protocol 24: Deterministic Vertical-Slice Functional Testing (.http)
+###
+### Usage:
+###   1. Start backend server: npm run dev:backend (or node backend/src/server.js)
+###   2. Open this file in VS Code and click "Send Request" above any scenario,
+###      or execute across the file via REST Client.
+
+@host = http://localhost:4000
+@baseUrl = {{host}}/api/v1
+
+### 1. Canonical Health Check Endpoint (Protocol 35)
+# @name healthCheck
+# Expected Response:
+#   HTTP/1.1 200 OK
+#   { "status": "UP", "uptime": number, "environment": "development" }
+GET {{baseUrl}}/health HTTP/1.1
+Accept: application/json
+
+###
+
+### 2. Operational API Canary Ping Endpoint
+# @name pingCheck
+# Expected Response:
+#   HTTP/1.1 200 OK
+#   { "success": true, "message": "Personal AI Agent V1 API Operational Canary", ... }
+GET {{baseUrl}}/ping HTTP/1.1
+Accept: application/json
+
+###
+
+### 3. Unmatched Route Handler (Protocol 21, 35 - Uniform 404 Error Envelope)
+# @name notFoundCheck
+# Expected Response:
+#   HTTP/1.1 404 Not Found
+#   { "success": false, "errorCode": "NOT_FOUND", ... }
+GET {{baseUrl}}/nonexistent-endpoint HTTP/1.1
+Accept: application/json
+
+###
+
+### 4. Verify Purge of Legacy /api/health Alias (Protocol 35, 44)
+# @name legacyHealthPurged
+# Expected Response:
+#   HTTP/1.1 404 Not Found (confirming legacy alias was permanently eradicated)
+GET {{host}}/api/health HTTP/1.1
+Accept: application/json
+
+###
+
+### 5. Verify Zero Static Local Uploads Exposure (Protocol 43)
+# @name staticUploadsPurged
+# Expected Response:
+#   HTTP/1.1 404 Not Found (confirming static uploads directory was purged)
+GET {{host}}/uploads/test.png HTTP/1.1
+Accept: */*
+
+###
+

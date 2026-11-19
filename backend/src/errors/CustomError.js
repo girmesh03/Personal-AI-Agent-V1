@@ -118,6 +118,27 @@ export class ConflictError extends CustomError {
 }
 
 /**
+ * 413 Payload Too Large Error.
+ * Thrown when incoming request body exceeds payload limits.
+ * @class PayloadTooLargeError
+ * @extends CustomError
+ */
+export class PayloadTooLargeError extends CustomError {
+  /**
+   * @param {string} [message='Request payload exceeds the maximum allowed size.'] - Error message.
+   * @param {string} [errorCode='PAYLOAD_TOO_LARGE'] - Machine-readable error code.
+   * @param {Array<object>|null} [details=null] - Optional error details.
+   */
+  constructor(
+    message = 'Request payload exceeds the maximum allowed size.',
+    errorCode = 'PAYLOAD_TOO_LARGE',
+    details = null
+  ) {
+    super(message, HTTP_STATUS.PAYLOAD_TOO_LARGE, errorCode, details);
+  }
+}
+
+/**
  * 422 Unprocessable Entity / Validation Error.
  * Thrown when request body fails semantic validation rules.
  * @class ValidationError
@@ -230,6 +251,7 @@ export default {
   ForbiddenError,
   NotFoundError,
   ConflictError,
+  PayloadTooLargeError,
   ValidationError,
   TooManyRequestsError,
   InternalServerError,

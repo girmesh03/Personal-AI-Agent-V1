@@ -11,8 +11,8 @@ const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 12; // 96-bit IV recommended for GCM
 const SALT = 'operon-byok-envelope-v1';
 
-// Derive deterministic 32-byte master encryption key from JWT_ACCESS_SECRET
-const MASTER_KEY = crypto.scryptSync(env.JWT_ACCESS_SECRET, SALT, 32);
+// Derive deterministic 32-byte master encryption key from dedicated ENCRYPTION_KEY (with JWT_ACCESS_SECRET fallback)
+const MASTER_KEY = crypto.scryptSync(env.ENCRYPTION_KEY || env.JWT_ACCESS_SECRET, SALT, 32);
 
 /**
  * Encrypts a sensitive plaintext secret string using AES-256-GCM.

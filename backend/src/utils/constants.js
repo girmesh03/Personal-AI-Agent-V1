@@ -22,6 +22,8 @@ export const HTTP_STATUS = Object.freeze({
   FORBIDDEN: 403,
   NOT_FOUND: 404,
   CONFLICT: 409,
+  PAYLOAD_TOO_LARGE: 413,
+  UNSUPPORTED_MEDIA_TYPE: 415,
   UNPROCESSABLE_ENTITY: 422,
   TOO_MANY_REQUESTS: 429,
   INTERNAL_SERVER_ERROR: 500,
@@ -31,21 +33,87 @@ export const HTTP_STATUS = Object.freeze({
 });
 
 /**
- * Authoritative AI foundation model identifiers (Protocol 28).
- * Pure verified models only; zero legacy (gemini-2.5-*) or phantom (gemini-3.5-flash) models.
+ * Authoritative AI provider identifiers (Protocol 63).
+ * Namespaces supported AI model providers across the platform.
  * @constant
+ * @type {Readonly<{ GOOGLE: string, ADDIS: string }>}
+ */
+export const AI_PROVIDERS = Object.freeze({
+  GOOGLE: 'google',
+  ADDIS: 'addis',
+});
+
+/**
+ * Authoritative AI foundation model identifiers (Protocol 28, 63, 69).
+ * Namespaced strictly by provider; pure verified models only; zero root fallback aliases.
+ * @constant
+ * @type {Readonly<{
+ *   google: Readonly<{ DEFAULT: string, PRO: string, FALLBACK: string, MODELS: readonly string[] }>,
+ *   addis: Readonly<{ DEFAULT: string, MODELS: readonly string[] }>
+ * }>}
  */
 export const AI_MODELS = Object.freeze({
-  DEFAULT: 'gemini-3.1-flash-lite',
-  PRO: 'gemini-3.8-flash',
-  FALLBACK: 'gemini-3-flash-preview',
-  REGIONAL: 'addis-1',
-  SUPPORTED: Object.freeze([
-    'gemini-3.1-flash-lite',
-    'gemini-3.8-flash',
-    'gemini-3-flash-preview',
-    'addis-1',
-  ]),
+  [AI_PROVIDERS.GOOGLE]: Object.freeze({
+    DEFAULT: 'gemini-3.1-flash-lite',
+    PRO: 'gemini-3.8-flash',
+    FALLBACK: 'gemini-3-flash-preview',
+    MODELS: Object.freeze([
+      'gemini-3.1-flash-lite',
+      'gemini-3.8-flash',
+      'gemini-3-flash-preview',
+    ]),
+  }),
+  [AI_PROVIDERS.ADDIS]: Object.freeze({
+    DEFAULT: 'addis-1',
+    MODELS: Object.freeze(['addis-1']),
+  }),
+});
+
+/**
+ * Global roster of all supported AI foundation models across all providers (Protocol 69).
+ * @constant
+ * @type {readonly string[]}
+ */
+export const SUPPORTED_AI_MODELS = Object.freeze([
+  ...AI_MODELS[AI_PROVIDERS.GOOGLE].MODELS,
+  ...AI_MODELS[AI_PROVIDERS.ADDIS].MODELS,
+]);
+
+/**
+ * Dynamic mapping of each supported foundation model to its authoritative AI provider (Protocol 69).
+ * Derived automatically from AI_MODELS via Object.entries().
+ * @constant
+ * @type {Readonly<Record<string, string>>}
+ */
+export const MODEL_PROVIDER_MAP = Object.freeze(
+  Object.fromEntries(
+    Object.entries(AI_MODELS).flatMap(([provider, cfg]) =>
+      cfg.MODELS.map((model) => [model, provider])
+    )
+  )
+);
+
+/**
+ * Metadata and upstream API configuration per AI provider (Protocol 63).
+ * @constant
+ */
+export const AI_PROVIDER_CONFIG = Object.freeze({
+  [AI_PROVIDERS.GOOGLE]: Object.freeze({
+    name: 'Google Gemini',
+    apiKeyField: 'geminiApiKey',
+    hasKeyField: 'hasGeminiKey',
+    authHeader: 'x-goog-api-key',
+    supportsThinkingBudget: true,
+  }),
+  [AI_PROVIDERS.ADDIS]: Object.freeze({
+    name: 'Addis AI',
+    baseURL: 'https://api.addisassistant.com/v1',
+    nativeBaseURL: 'https://api.addisassistant.com',
+    apiKeyField: 'addisApiKey',
+    hasKeyField: 'hasAddisKey',
+    authHeader: 'x-api-key',
+    supportsThinkingBudget: false,
+  }),
 });
 
 /**
@@ -83,6 +151,14 @@ export const USER_NAME_LENGTH = Object.freeze({
 export const PASSWORD_MIN_LENGTH = 8;
 
 /**
+ * Password validation regex enforcing at least 8 characters,
+ * 1 uppercase letter, 1 lowercase letter, 1 number, and 1 special character.
+ * @constant
+ * @type {RegExp}
+ */
+export const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+
+/**
  * Bcrypt salt rounds factor for password hashing.
  * @constant
  * @type {number}
@@ -114,8 +190,10 @@ export const COOKIE_MAX_AGE = Object.freeze({
  * @constant
  */
 export const CHAT_CONSTANTS = Object.freeze({
-  DEFAULT_MODEL: AI_MODELS.DEFAULT,
-  SUPPORTED_MODELS: AI_MODELS.SUPPORTED,
+  DEFAULT_PROVIDER: AI_PROVIDERS.GOOGLE,
+  SUPPORTED_PROVIDERS: Object.freeze([AI_PROVIDERS.GOOGLE, AI_PROVIDERS.ADDIS]),
+  DEFAULT_MODEL: AI_MODELS[AI_PROVIDERS.GOOGLE].DEFAULT,
+  SUPPORTED_MODELS: SUPPORTED_AI_MODELS,
   STT_ENGINES: Object.freeze([
     STT_ENGINES.ADDIS_AI,
     STT_ENGINES.GEMINI_FLASH,
@@ -148,4 +226,13 @@ export const TTS_CONSTANTS = Object.freeze({
  */
 export const REPORT_CONSTANTS = Object.freeze({
   TEMPLATE_MAX_LENGTH: 5000,
+});
+
+/**
+ * Telegram integration configuration defaults and supported formats.
+ * @constant
+ */
+export const TELEGRAM_CONSTANTS = Object.freeze({
+  FORMATS: Object.freeze(['text', 'image']),
+  DEFAULT_FORMAT: 'text',
 });

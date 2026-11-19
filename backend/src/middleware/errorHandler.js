@@ -1,7 +1,7 @@
 /**
  * @module middleware/errorHandler
  * @description Centralized global error handling middleware normalizing all application exceptions
- * into a uniform JSON response envelope.
+ * into a uniform JSON response envelope. Adheres strictly to Protocol 62 (defensive malformed payload handling).
  */
 
 import { HTTP_STATUS } from '../utils/constants.js';
@@ -11,6 +11,7 @@ import {
   ValidationError,
   BadRequestError,
   UnauthenticatedError,
+  PayloadTooLargeError,
 } from '../errors/CustomError.js';
 import { logger } from '../config/logger.js';
 
@@ -28,6 +29,53 @@ import { logger } from '../config/logger.js';
  */
 export const errorHandler = (err, req, res, _next) => {
   let error = err;
+
+  // 0. Body-Parser / Malformed JSON SyntaxError (Protocol 62)
+  if (
+    err.type === 'entity.parse.failed' ||
+    (err instanceof SyntaxError && (err.status === 400 || err.statusCode === 400))
+  ) {
+    error = new BadRequestError(
+      'Malformed JSON payload in request body. Please verify JSON syntax.',
+      'MALFORMED_JSON'
+    );
+  }
+  // 0a. Payload Too Large (e.g. body-parser limit exceeded)
+  else if (
+    err.type === 'entity.too.large' ||
+    err.name === 'PayloadTooLargeError' ||
+    err.status === 413 ||
+    err.statusCode === 413
+  ) {
+    error = new PayloadTooLargeError(
+      'Uploaded request payload exceeds the maximum permitted limit of 10MB.',
+      'PAYLOAD_TOO_LARGE'
+    );
+  }
+  // 0b. Unsupported Media Type or Encoding
+  else if (
+    err.type === 'charset.unsupported' ||
+    err.type === 'encoding.unsupported' ||
+    err.status === 415 ||
+    err.statusCode === 415
+  ) {
+    error = new BadRequestError(
+      'Unsupported payload encoding or media type.',
+      'UNSUPPORTED_MEDIA_TYPE'
+    );
+  }
+  // 0c. General HTTP client errors (status 400-499) emitted prior to controllers
+  else if (
+    (typeof err.status === 'number' && err.status >= 400 && err.status < 500) ||
+    (typeof err.statusCode === 'number' && err.statusCode >= 400 && err.statusCode < 500)
+  ) {
+    const status = err.status || err.statusCode;
+    error = new CustomError(
+      err.message || 'Invalid client request.',
+      status,
+      err.errorCode || 'BAD_REQUEST'
+    );
+  }
 
   // 1. Mongoose duplicate key error (code 11000)
   if (err.code === 11000) {

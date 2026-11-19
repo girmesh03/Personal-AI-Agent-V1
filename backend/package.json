@@ -6,7 +6,11 @@
  "scripts": {
   "start": "node src/server.js",
   "dev": "node scripts/killPort.js 4000 && nodemon src/server.js",
-  "verify": "node scripts/verifyCodebase.js"
+  "verify": "node scripts/verifyCodebase.js",
+  "test": "node --test tests/integration/*.test.js",
+  "test:phase1": "node --test tests/integration/phase1-foundation.test.js",
+  "test:phase2": "node --test tests/integration/phase2-auth-user.test.js",
+  "test:all": "node --test tests/integration/*.test.js"
  },
  "keywords": [],
  "author": "",

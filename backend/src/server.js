@@ -9,6 +9,10 @@ import { env } from './config/env.js';
 import { logger } from './config/logger.js';
 import { connectDB, disconnectDB } from './config/db.js';
 
+/**
+ * Active HTTP server instance.
+ * @type {import('http').Server|undefined}
+ */
 let server;
 
 /**

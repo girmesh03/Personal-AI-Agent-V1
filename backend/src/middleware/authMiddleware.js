@@ -23,11 +23,9 @@ import { UnauthenticatedError } from '../errors/CustomError.js';
 export const protect = asyncHandler(async (req, _res, next) => {
   let token;
 
-  // 1. Check HttpOnly cookies first
+  // 1. Check HttpOnly accessToken cookie first
   if (req.cookies?.accessToken) {
     token = req.cookies.accessToken;
-  } else if (req.cookies?.token) {
-    token = req.cookies.token;
   }
   // 2. Fallback to Authorization header Bearer token
   else if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
