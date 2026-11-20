@@ -8,11 +8,11 @@ Systematically re-engineer the functional capabilities of historical V0 into a p
 
 ## Next Step
 
-Phase 3 complete, merged into main, synced to remote, and feature branch cleaned up. Ready for Phase 4 (Conversational State Machine, SSE Streaming & Chat Routes) input recognition and planning.
+Phase 4 complete, merged into main, synced to remote, and feature branch cleaned up. Ready for Phase 5 input recognition and planning.
 
 ## Current Phase
 
-Phase 3: Conversational Intelligence Core — Chat, Message & Asset Schema Architecture (Complete & Merged to Main)
+Phase 4: Operational Domain Architecture — Branch & Report Schema Design (Complete & Merged to Main)
 
 ## Phases
 
@@ -73,6 +73,26 @@ Phase 3: Conversational Intelligence Core — Chat, Message & Asset Schema Archi
 - [x] Author automated integration test suite (`backend/tests/integration/phase3-schema.test.js`)
 - [x] Run full multi-suite verification (all 57 tests pass across 3 suites, backend verify 0 errors, client lint 0 errors/warnings, client build 0 errors)
 - [x] Skeptical review & flaw eradication: fixed query-level cascading deletion in `Chat.js`, enforced integer constraints on `Message.sequence` and `Asset.sizeBytes`, added asset reference cleanup on `Asset` deletion, and expanded tests to 22 tests in Phase 3
+- [x] Product Owner authorized git commit, merge to main, push to origin/main, and feature branch cleanup
+- **Status:** complete
+
+### Phase 4: Operational Domain Architecture — Branch & Report Schema Design
+
+- [x] Deep audit of historical V0 branch and report architecture across backend and client
+- [x] Author comprehensive Phase 4 Implementation Plan artifact at `<appDataDir>/brain/<conversation-id>/phase-4-branch-report-plan.md`
+- [x] Create dedicated feature branch `phase-4-branch-report-schema` (Git Protocol compliance)
+- [x] Product Owner review & explicit approval granted (Zero-Code Invariant lifted)
+- [x] Update centralized constants (`BRANCH_CONSTANTS`, `REPORT_CONSTANTS`) in 1-to-1 parity across `backend` and `client`
+- [x] Implement bidirectional Julian Day Number conversion utility (`backend/src/utils/ethiopianCalendar.js`) with UTC normalization
+- [x] Implement clean-slate `Branch` schema (`backend/src/models/Branch.js`) with flattened geography, uppercase code, bilingual aliases, collation unique index, and `mongoose-paginate-v2`
+- [x] Implement clean-slate `Report` schema (`backend/src/models/Report.js`) with dual-calendar auto-derivation, shift work hours, bounded shift items (`visits`, `activities`, `issues`, `comments`), universal multimodal `assets` (file, image, audio), and `mongoose-paginate-v2`
+- [x] Update `backend/src/models/Asset.js` to cascade-clean references from `Report.assets` on asset deletion
+- [x] Update `backend/src/services/userService.js` to cascade deletion across `Branch` and `Report` in Tier 1 Three-Tier Account Deletion (Protocol 42)
+- [x] Update `backend/tests/integration/testHarness.js` to purge `Branch` and `Report` for test users and export models (Protocol 68)
+- [x] Author automated headless integration test suite (`backend/tests/integration/phase4-schema.test.js`) covering 26 comprehensive scenarios
+- [x] Wire `test:phase4` script across `backend/package.json` and root `package.json`
+- [x] Skeptical review & flaw eradication: fixed timezone offset extraction in `toEthiopianDate`, synchronized mutation updates in `Report.js` pre-validate hook, hardened `Report.assets` validator against null, trimmed individual `Branch.aliases` elements, and expanded tests to 26 tests in Phase 4 (83 total tests across platform)
+- [x] Run full multi-suite verification: all 83 tests pass across 4 suites (Phase 1: 9/9, Phase 2: 26/26, Phase 3: 22/22, Phase 4: 26/26), backend verify 0 errors, client lint 0 errors/warnings, client build 0 errors
 - [x] Product Owner authorized git commit, merge to main, push to origin/main, and feature branch cleanup
 - **Status:** complete
 

@@ -180,38 +180,74 @@ assetSchema.index({ chat: 1, message: 1 });
 assetSchema.index({ user: 1, checksum: 1 });
 
 /**
- * Pre-deleteOne document middleware hook cleaning up asset references from Message.assets.
+ * Pre-deleteOne document middleware hook cleaning up asset references from Message.assets and Report.assets.
  */
 assetSchema.pre('deleteOne', { document: true, query: false }, async function () {
-  await mongoose.model('Message').updateMany(
-    { assets: this._id },
-    { $pull: { assets: this._id } }
-  );
+  const assetId = this._id;
+  const cleanupTasks = [
+    mongoose.model('Message').updateMany(
+      { assets: assetId },
+      { $pull: { assets: assetId } }
+    ),
+  ];
+  if (mongoose.models.Report) {
+    cleanupTasks.push(
+      mongoose.model('Report').updateMany(
+        { assets: assetId },
+        { $pull: { assets: assetId } }
+      )
+    );
+  }
+  await Promise.all(cleanupTasks);
 });
 
 /**
- * Pre-deleteOne query middleware hook cleaning up asset references from Message.assets.
+ * Pre-deleteOne query middleware hook cleaning up asset references from Message.assets and Report.assets.
  */
 assetSchema.pre('deleteOne', { document: false, query: true }, async function () {
   const doc = await this.model.findOne(this.getQuery());
   if (doc) {
-    await mongoose.model('Message').updateMany(
-      { assets: doc._id },
-      { $pull: { assets: doc._id } }
-    );
+    const assetId = doc._id;
+    const cleanupTasks = [
+      mongoose.model('Message').updateMany(
+        { assets: assetId },
+        { $pull: { assets: assetId } }
+      ),
+    ];
+    if (mongoose.models.Report) {
+      cleanupTasks.push(
+        mongoose.model('Report').updateMany(
+          { assets: assetId },
+          { $pull: { assets: assetId } }
+        )
+      );
+    }
+    await Promise.all(cleanupTasks);
   }
 });
 
 /**
- * Pre-findOneAndDelete middleware hook cleaning up asset references from Message.assets.
+ * Pre-findOneAndDelete middleware hook cleaning up asset references from Message.assets and Report.assets.
  */
 assetSchema.pre('findOneAndDelete', async function () {
   const doc = await this.model.findOne(this.getQuery());
   if (doc) {
-    await mongoose.model('Message').updateMany(
-      { assets: doc._id },
-      { $pull: { assets: doc._id } }
-    );
+    const assetId = doc._id;
+    const cleanupTasks = [
+      mongoose.model('Message').updateMany(
+        { assets: assetId },
+        { $pull: { assets: assetId } }
+      ),
+    ];
+    if (mongoose.models.Report) {
+      cleanupTasks.push(
+        mongoose.model('Report').updateMany(
+          { assets: assetId },
+          { $pull: { assets: assetId } }
+        )
+      );
+    }
+    await Promise.all(cleanupTasks);
   }
 });
 

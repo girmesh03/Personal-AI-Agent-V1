@@ -11,6 +11,7 @@
   "test:phase1": "node --test tests/integration/phase1-foundation.test.js",
   "test:phase2": "node --test tests/integration/phase2-auth-user.test.js",
   "test:phase3": "node --test tests/integration/phase3-schema.test.js",
+  "test:phase4": "node --test tests/integration/phase4-schema.test.js",
   "test:all": "node --test --test-concurrency=1 tests/integration/*.test.js"
  },
  "keywords": [],

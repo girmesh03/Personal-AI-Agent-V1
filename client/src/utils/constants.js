@@ -258,6 +258,35 @@ export const TTS_CONSTANTS = Object.freeze({
  */
 export const REPORT_CONSTANTS = Object.freeze({
   TEMPLATE_MAX_LENGTH: 5000,
+  TRANSCRIPTION_MAX_LENGTH: 20000,
+  TIME_REGEX: /^([01]\d|2[0-3]):[0-5]\d$/,
+  ACTIVITY_STATUSES: Object.freeze(['completed', 'in_progress', 'pending']),
+  DEFAULT_ACTIVITY_STATUS: 'completed',
+  ACTIVITY_TEXT_MAX_LENGTH: 500,
+  ISSUE_STATUSES: Object.freeze(['reported', 'in_progress', 'resolved']),
+  DEFAULT_ISSUE_STATUS: 'reported',
+  ISSUE_TEXT_MAX_LENGTH: 500,
+  COMMENT_TEXT_MAX_LENGTH: 1000,
+  MAX_ASSETS: 20,
+  DEFAULT_CLOCK_IN: '08:00',
+  DEFAULT_CLOCK_OUT: '17:00',
+});
+
+/**
+ * Physical branch location boundaries, limits, and defaults.
+ * @constant
+ */
+export const BRANCH_CONSTANTS = Object.freeze({
+  NAME_MIN_LENGTH: 1,
+  NAME_MAX_LENGTH: 100,
+  CODE_MIN_LENGTH: 2,
+  CODE_MAX_LENGTH: 20,
+  DEFAULT_CITY: 'Addis Ababa',
+  CITY_MAX_LENGTH: 100,
+  SUBCITY_MAX_LENGTH: 100,
+  ADDRESS_MAX_LENGTH: 200,
+  MANAGER_NAME_MAX_LENGTH: 100,
+  CONTACT_PHONE_MAX_LENGTH: 30,
 });
 
 /**

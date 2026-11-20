@@ -12,6 +12,8 @@ import User from '../../src/models/User.js';
 import Chat from '../../src/models/Chat.js';
 import Message from '../../src/models/Message.js';
 import Asset from '../../src/models/Asset.js';
+import Branch from '../../src/models/Branch.js';
+import Report from '../../src/models/Report.js';
 
 /**
  * Domain regex strictly matching all test user accounts created during integration runs.
@@ -36,6 +38,8 @@ export const purgeTestUsers = async () => {
       Chat.deleteMany({ user: { $in: userIds } }),
       Message.deleteMany({ user: { $in: userIds } }),
       Asset.deleteMany({ user: { $in: userIds } }),
+      Branch.deleteMany({ user: { $in: userIds } }),
+      Report.deleteMany({ user: { $in: userIds } }),
     ]);
   }
   return User.deleteMany({ email: TEST_EMAIL_DOMAIN_REGEX });
@@ -193,4 +197,4 @@ export class TestClient {
   }
 }
 
-export { connectDB, disconnectDB, User, Chat, Message, Asset };
+export { connectDB, disconnectDB, User, Chat, Message, Asset, Branch, Report };

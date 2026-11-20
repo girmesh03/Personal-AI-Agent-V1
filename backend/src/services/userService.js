@@ -13,6 +13,8 @@ import User from '../models/User.js';
 import Chat from '../models/Chat.js';
 import Message from '../models/Message.js';
 import Asset from '../models/Asset.js';
+import Branch from '../models/Branch.js';
+import Report from '../models/Report.js';
 import { normalizeTelegramChatId } from '../utils/authUtils.js';
 import {
   NotFoundError,
@@ -712,12 +714,14 @@ export const executeAccountDeletion = async (userId, password) => {
     }
   }
 
-  // Tier 1: Purge user document and cascade associated chats, messages, and assets (Protocol 42)
+  // Tier 1: Purge user document and cascade associated chats, messages, assets, branches, and reports (Protocol 42)
   await Promise.all([
     User.deleteOne({ _id: userId }),
     Chat.deleteMany({ user: userId }),
     Message.deleteMany({ user: userId }),
     Asset.deleteMany({ user: userId }),
+    Branch.deleteMany({ user: userId }),
+    Report.deleteMany({ user: userId }),
   ]);
 
   return {

@@ -275,6 +275,66 @@ Use this file as the durable knowledge base for discoveries, evidence, and decis
     3. Asset deletion cascading reference cleanup from `Message.assets`.
     4. 5MB high-capacity `extractedText` document persistence and cross-user checksum isolation on compound index `{ user: 1, checksum: 1 }`.
 
+---
+
+## Phase 4: Operational Domain Architecture — Branch & Report Schema Design Findings
+
+### 1. Geographic Flattening Invariant (Directive 5)
+- In historical V0, `Branch.location` was defined as a nested subdocument `{ city, subcity, address }`. This created unnecessary query nesting (`location.city`), added overhead during object transformations, and complicated regex-based bilingual searches.
+- In clean-slate V1, `city`, `subcity`, and `address` are flattened directly onto the `Branch` root schema with strict length bounds from `BRANCH_CONSTANTS`. Zero subdocuments exist in `Branch`.
+
+### 2. Universal Multimodal Attachments & Anti-Skipping Resolution (Protocols 43, 48, 55, Directive 3)
+- Historical V0 restricted reports exclusively to audio attachments (`Report.audios: [Audio]`), completely preventing inspection photos, kitchen cleanliness evidence, and PDF maintenance checklists from being attached. Furthermore, during chat interactions, the agent frequently skipped passing audio IDs into `create_report`.
+- Clean-slate V1 models evidentiary attachments via normalized `Report.assets: [{ type: ObjectId, ref: 'Asset' }]`, supporting all three binary kinds (`file`, `image`, `audio`).
+- Bounded by `REPORT_CONSTANTS.MAX_ASSETS` (20 assets max).
+- In `Asset.js`, pre-delete hooks automatically pull deleted asset references from `Report.assets` to prevent dangling references.
+
+### 3. Dual-Calendar Temporal Authority & UTC Normalization (Protocol 54)
+- Operational reports represent concluded shifts, with exactly one active report permitted per user per calendar day across both Gregorian and Ethiopian calendar systems.
+- In V0, `pre('validate')` split `d.toISOString()` while using local Date components, causing off-by-one calendar drift between Gregorian and Ethiopian dates depending on server timezone.
+- In V1, `ethiopianCalendar.js` utilizes Julian Day Number (JDN) algorithms with strict UTC date extraction (`getUTCFullYear()`, `getUTCMonth() + 1`, `getUTCDate()`), eliminating timezone jitter.
+- The `Report` schema enforces partial compound unique indexes on both:
+  - `{ user: 1, dateString: 1 }` (`unique: true`, `partialFilterExpression: { isArchived: false, dateString: { $type: 'string' } }`)
+  - `{ user: 1, ethiopianDate: 1 }` (`unique: true`, `partialFilterExpression: { isArchived: false, ethiopianDate: { $type: 'string' } }`)
+- Pre-validate hook automatically computes `dateString` (YYYY-MM-DD) and `ethiopianDate` (DD-MM-YY) from `date`.
+
+### 4. Historical Report Preservation (Data Integrity)
+- In historical V0 (`sweeper.js: 14525`), deleting an archived branch permanently deleted all historical reports that had visited that branch (`Report.deleteMany({ 'visits.branch': branchId })`), destroying business audit trails.
+- In V1, reports are immutable historical audit records. Deleting a branch does NOT delete historical reports; visits retain their branch identifier reference intact.
+
+### 5. Deliberate Field Invariant & Dead Field Abolition (Directive 4 & 6)
+- In V0, `commentSchema` contained a dead `status: { type: String, default: null }` field with no enum, no validation, and no UI usage.
+- In V1, comments are simplified strictly to `{ text: String }` with `{ _id: false }`.
+- Bounded shift items (`visits`, `activities`, `issues`, `comments`) are embedded arrays with `{ _id: false }`, preventing subdocument ID overhead while maintaining strict bounded document sizes (< 25 KB).
+
+### 6. Mongoose Pagination Plugin Support
+- Both `Branch` and `Report` attach `mongoose-paginate-v2` (`branchSchema.plugin(mongoosePaginate); reportSchema.plugin(mongoosePaginate);`), exposing uniform `.paginate()` pagination methods across list operations.
+
+### 7. Skeptical Reviewer Audit & Latent Bug Eradication (Review Round 5)
+- **Defect 1 — Timezone Offset Bypass in `toEthiopianDate` (Protocol 54)**:
+  - `toEthiopianDate` used regex `/^(\d{4})-(\d{2})-(\d{2})/` on incoming string inputs. For full ISO timestamps with non-UTC timezone offsets (e.g. `'2026-11-19T23:00:00-05:00'`, which is `2026-11-20T04:00:00.000Z` in UTC), the regex greedily matched the local leading prefix `'2026-11-19'`, skipping UTC date extraction and causing an off-by-one date drift (`{ year: 2019, month: 3, day: 10 }` instead of `{ year: 2019, month: 3, day: 11 }`).
+  - Fix: Restricted the regex check strictly to date-only strings (`/^\d{4}-\d{2}-\d{2}$/`), directing full ISO timestamps with timezone offsets through `new Date(trimmed)` with `getUTCFullYear()`, `getUTCMonth() + 1`, and `getUTCDate()` to guarantee exact UTC temporal grounding.
+- **Defect 2 — Desynchronized Dates on Mutation in `Report.js` (Protocol 54)**:
+  - `reportSchema.pre('validate')` checked `if (!this.dateString)` and `if (!this.ethiopianDate)`. When mutating `date` on an existing report document (`report.date = new Date('2026-11-30')`), existing populated strings were never recalculated, causing `dateString` and `ethiopianDate` to become permanently desynchronized from `date`.
+  - Fix: Updated pre-validate hook to check `(!this.dateString || (!this.isNew && this.isModified('date')))` and `(!this.ethiopianDate || (!this.isNew && this.isModified('date')))` so that date mutations automatically synchronize `dateString` and `ethiopianDate` while respecting explicit caller overrides on new documents.
+- **Defect 3 — Unhandled `TypeError` in `Report.assets` Validator on Null**:
+  - `Report.assets` validator `(val) => val.length <= REPORT_CONSTANTS.MAX_ASSETS` threw an unhandled `TypeError: Cannot read properties of null (reading 'length')` when `assets` was null.
+  - Fix: Hardened validator to `(val) => !val || (Array.isArray(val) && val.length <= REPORT_CONSTANTS.MAX_ASSETS)`.
+- **Defect 4 — Untrimmed Whitespace in `Branch.aliases`**:
+  - `Branch.aliases` was defined as `type: [String]`, which did not trim individual elements, allowing whitespace-polluted strings (`['  Bole  ', '  ቦሌ  ']`) into search indexes.
+  - Fix: Defined `aliases` as an array of schema objects with `{ type: String, trim: true, maxlength: ... }`.
+- **Defect 5 — Untested Ethiopian Date Compound Unique Index & Test Expansion (Protocol 68)**:
+  - Prior attempt claimed verification of dual-calendar uniqueness, but only tested `dateString` duplicates (where the Gregorian unique index tripped first). The partial compound unique index on `{ user: 1, ethiopianDate: 1 }` was completely untested.
+  - Furthermore, test 5.1 tested deleting an active branch instead of an archived branch, missing the historical sweeper scenario from V0.
+  - Fix: Expanded `backend/tests/integration/phase4-schema.test.js` from 21 to 26 tests (83 total tests across platform):
+    - Test 1.8: Verified trimming of whitespace on individual `Branch.aliases` elements.
+    - Test 2.5: Verified that `{ user: 1, ethiopianDate: 1 }` partial compound unique index strictly rejects duplicate Ethiopian dates for the same active user even with a distinct Gregorian date.
+    - Test 2.6: Verified that mutating `date` on an existing report updates `dateString` and `ethiopianDate` automatically.
+    - Test 2.7: Verified that `toEthiopianDate` normalizes timestamps with non-UTC timezone offsets to UTC without date drift.
+    - Test 4.6: Verified that setting `assets: null` validates cleanly without `TypeError`.
+    - Test 5.1: Soft-archived branch before deletion to faithfully test the historical sweeper scenario.
+
+
 
 
 

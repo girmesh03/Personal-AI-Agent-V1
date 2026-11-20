@@ -477,7 +477,71 @@ Use this file as the chronological record of work performed, files changed, vali
     - `npm run lint --workspace=client`: 0 errors, 0 warnings.
     - `npm run build --workspace=client`: built cleanly with Vite (0 errors).
     - `npm run verify`: 100% clean multi-workspace pass.
+  ---
+
+## Session: 2026-11-20 (Phase 4 Implementation: Branch & Report Schema Architecture)
+
+### Clean-Slate Schema Implementation & Multi-Suite Verification
+
+- **Status:** complete
+- **Started:** 2026-11-20T03:47:00Z
+- **Completed:** 2026-11-20T04:02:00Z
+- Actions taken:
+  - Critical Git Protocol: created and switched to dedicated feature branch `phase-4-branch-report-schema` as very first action.
+  - Ingested Phase 4 Implementation Plan artifact (`phase-4-branch-report-plan.md`).
+  - Updated centralized constants with 1-to-1 parity across `backend/src/utils/constants.js` and `client/src/utils/constants.js` (Protocols 8, 27):
+    - Added `BRANCH_CONSTANTS`: `NAME_MIN_LENGTH`, `NAME_MAX_LENGTH`, `CODE_MIN_LENGTH`, `CODE_MAX_LENGTH`, `DEFAULT_CITY`, `CITY_MAX_LENGTH`, `SUBCITY_MAX_LENGTH`, `ADDRESS_MAX_LENGTH`, `MANAGER_NAME_MAX_LENGTH`, `CONTACT_PHONE_MAX_LENGTH`.
+    - Expanded `REPORT_CONSTANTS`: `TEMPLATE_MAX_LENGTH`, `TRANSCRIPTION_MAX_LENGTH`, `TIME_REGEX`, `ACTIVITY_STATUSES`, `DEFAULT_ACTIVITY_STATUS`, `ACTIVITY_TEXT_MAX_LENGTH`, `ISSUE_STATUSES`, `DEFAULT_ISSUE_STATUS`, `ISSUE_TEXT_MAX_LENGTH`, `COMMENT_TEXT_MAX_LENGTH`, `MAX_ASSETS`, `DEFAULT_CLOCK_IN`, `DEFAULT_CLOCK_OUT`.
+  - Implemented bidirectional Ethiopian calendar utility (`backend/src/utils/ethiopianCalendar.js`):
+    - Julian Day Number (JDN) algorithms with strict UTC normalization to eliminate timezone jitter and date drift (Protocol 54).
+    - `gregorianToJdn`, `jdnToGregorian`, `jdnToEthiopian`, `ethiopianToJdn`, `toEthiopianDate`, `toEthiopianDateString` (DD-MM-YY), `toEthiopianDateStringFull`, `toGregorianDate`.
+  - Implemented clean-slate `Branch` model (`backend/src/models/Branch.js`):
+    - Scoped strictly to `user` (`ref: 'User'`, required, indexed) (Protocol 21).
+    - Flattened geographic attributes (`city`, `subcity`, `address`), completely eliminating nested `location` subdocuments (Directive 5).
+    - Uppercase operational code normalization (`bole-01` -> `BOLE-01`).
+    - Bilingual search discovery aliases (`aliases`, indexed).
+    - Soft-archival tracking (`isArchived`, `archivedAt`).
+    - Compound partial unique indexes: `{ user: 1, name: 1 }` (unique, case-insensitive collation `strength: 2`, partialFilterExpression `{ isArchived: false }`), `{ user: 1, code: 1 }` (unique, partialFilterExpression `{ isArchived: false }`), directory index `{ user: 1, isArchived: 1, createdAt: -1 }`.
+    - Attached `mongoose-paginate-v2` plugin for uniform pagination envelopes.
+    - Full JSDoc contracts (Protocols 20, 36, 71).
+  - Implemented clean-slate `Report` model (`backend/src/models/Report.js`):
+    - Scoped strictly to `user` (`ref: 'User'`, required, indexed) (Protocol 21).
+    - Dual-calendar temporal grounding: `date`, `dateString` (YYYY-MM-DD), `ethiopianDate` (DD-MM-YY).
+    - Pre-validate hook automatically computing `dateString` and `ethiopianDate` via UTC normalization.
+    - Shift work hours format validation (`clockIn`, `clockOut`) against `REPORT_CONSTANTS.TIME_REGEX`.
+    - Authoritative Amharic operational narrative dossier (`transcription`).
+    - Bounded shift items (`visits`, `activities`, `issues`, `comments`) with `{ _id: false }`, completely abolishing V0's dead `comment.status` field (Directives 4, 5, 6).
+    - Universal multimodal evidentiary asset attachments (`assets: [{ type: ObjectId, ref: 'Asset' }]`) bounded by `MAX_ASSETS` (Directives 3, Protocols 43, 48, 55).
+    - Compound partial unique indexes: `{ user: 1, dateString: 1 }` (unique, partialFilterExpression `{ isArchived: false, dateString: { $type: 'string' } }`), `{ user: 1, ethiopianDate: 1 }` (unique, partialFilterExpression `{ isArchived: false, ethiopianDate: { $type: 'string' } }`).
+    - Compound query indexes: `{ user: 1, date: -1 }`, `{ user: 1, 'visits.branch': 1 }`, `{ user: 1, assets: 1 }`, `{ user: 1, archivedAt: -1 }`.
+    - Attached `mongoose-paginate-v2` plugin for uniform pagination envelopes.
+    - Full JSDoc contracts (Protocols 20, 36, 71).
+  - Updated `backend/src/models/Asset.js`:
+    - Added pre-delete cascading hooks (document `deleteOne`, query `deleteOne`, `findOneAndDelete`) to automatically pull deleted asset references from `Report.assets`.
+  - Updated `backend/src/services/userService.js`:
+    - Updated `executeAccountDeletion` to cascade deletion across `Branch` and `Report` in Tier 1 (Protocol 42).
+  - Updated `backend/tests/integration/testHarness.js`:
+    - Updated `purgeTestUsers()` to cascade deletion across `Branch` and `Report`.
+    - Exported `Branch` and `Report` models (Protocol 68).
+  - Added `test:phase4` script to `backend/package.json` and root `package.json`.
+  - Authored automated integration test suite (`backend/tests/integration/phase4-schema.test.js`):
+    - 26 comprehensive tests validating Branch creation, flattening, case-insensitive collation uniqueness, code uniqueness, soft-archival/re-creation, pagination plugin, alias whitespace trimming, Report creation, dual-calendar auto-derivation, Gregorian and Ethiopian compound uniqueness, report date mutation synchronization, ISO timezone offset normalization, shift hours regex, bounded shift items, universal multimodal assets (`file`, `image`, `audio`), asset population, querying reports by asset ID, max assets ceiling, asset null handling, asset deletion reference cleanup, historical report preservation upon archived branch deletion, and Three-Tier Account Deletion cascading.
+  - Skeptical Reviewer Flaw Eradication (Review Round 5):
+    1. Fixed timezone offset extraction in `toEthiopianDate`: replaced greedy string prefix match with date-only validation (`/^\d{4}-\d{2}-\d{2}$/`) and routed full ISO strings with timezone offsets through UTC date conversion.
+    2. Fixed date mutation desynchronization in `Report.js`: updated `pre('validate')` to recompute `dateString` and `ethiopianDate` when `date` is modified on existing documents.
+    3. Fixed unhandled `TypeError` in `Report.assets` validator when `assets` is set to null.
+    4. Enforced whitespace trimming on individual elements of `Branch.aliases`.
+    5. Added explicit verification of partial compound unique index on `{ user: 1, ethiopianDate: 1 }`.
+    6. Updated historical branch deletion test (5.1) to archive the branch prior to deletion, faithfully matching V0 sweeper architecture.
+  - Multi-Suite Verification Results:
+    - `npm run verify --workspace=backend`: 0 syntax errors across all 30 backend source files, env configuration valid.
+    - `npm run test:phase4 --workspace=backend`: 26/26 PASS (100% green against live MongoDB Atlas replica set).
+    - `npm run test`: 83/83 PASS across all 4 suites (Phase 1: 9/9, Phase 2: 26/26, Phase 3: 22/22, Phase 4: 26/26) against live MongoDB Atlas replica set with verified zero residual test records.
+    - `npm run lint --workspace=client`: 0 ESLint errors, 0 warnings.
+    - `npm run build --workspace=client`: built cleanly with Vite in 466ms (0 errors).
+    - `npm run verify`: 100% clean multi-workspace pass.
   - Strictly enforced Zero Git Commit Gate (Protocol 25 & 59): no git commit executed.
+
 
 ---
 
@@ -514,7 +578,71 @@ Use this file as the chronological record of work performed, files changed, vali
   - `npm run lint --workspace=client`: 0 ESLint errors, 0 warnings.
   - `npm run build --workspace=client`: built cleanly with Vite in 630ms (0 errors).
   - `npm run verify`: 100% clean multi-workspace pass.
+  ---
+
+## Session: 2026-11-20 (Phase 4 Implementation: Branch & Report Schema Architecture)
+
+### Clean-Slate Schema Implementation & Multi-Suite Verification
+
+- **Status:** complete
+- **Started:** 2026-11-20T03:47:00Z
+- **Completed:** 2026-11-20T04:02:00Z
+- Actions taken:
+  - Critical Git Protocol: created and switched to dedicated feature branch `phase-4-branch-report-schema` as very first action.
+  - Ingested Phase 4 Implementation Plan artifact (`phase-4-branch-report-plan.md`).
+  - Updated centralized constants with 1-to-1 parity across `backend/src/utils/constants.js` and `client/src/utils/constants.js` (Protocols 8, 27):
+    - Added `BRANCH_CONSTANTS`: `NAME_MIN_LENGTH`, `NAME_MAX_LENGTH`, `CODE_MIN_LENGTH`, `CODE_MAX_LENGTH`, `DEFAULT_CITY`, `CITY_MAX_LENGTH`, `SUBCITY_MAX_LENGTH`, `ADDRESS_MAX_LENGTH`, `MANAGER_NAME_MAX_LENGTH`, `CONTACT_PHONE_MAX_LENGTH`.
+    - Expanded `REPORT_CONSTANTS`: `TEMPLATE_MAX_LENGTH`, `TRANSCRIPTION_MAX_LENGTH`, `TIME_REGEX`, `ACTIVITY_STATUSES`, `DEFAULT_ACTIVITY_STATUS`, `ACTIVITY_TEXT_MAX_LENGTH`, `ISSUE_STATUSES`, `DEFAULT_ISSUE_STATUS`, `ISSUE_TEXT_MAX_LENGTH`, `COMMENT_TEXT_MAX_LENGTH`, `MAX_ASSETS`, `DEFAULT_CLOCK_IN`, `DEFAULT_CLOCK_OUT`.
+  - Implemented bidirectional Ethiopian calendar utility (`backend/src/utils/ethiopianCalendar.js`):
+    - Julian Day Number (JDN) algorithms with strict UTC normalization to eliminate timezone jitter and date drift (Protocol 54).
+    - `gregorianToJdn`, `jdnToGregorian`, `jdnToEthiopian`, `ethiopianToJdn`, `toEthiopianDate`, `toEthiopianDateString` (DD-MM-YY), `toEthiopianDateStringFull`, `toGregorianDate`.
+  - Implemented clean-slate `Branch` model (`backend/src/models/Branch.js`):
+    - Scoped strictly to `user` (`ref: 'User'`, required, indexed) (Protocol 21).
+    - Flattened geographic attributes (`city`, `subcity`, `address`), completely eliminating nested `location` subdocuments (Directive 5).
+    - Uppercase operational code normalization (`bole-01` -> `BOLE-01`).
+    - Bilingual search discovery aliases (`aliases`, indexed).
+    - Soft-archival tracking (`isArchived`, `archivedAt`).
+    - Compound partial unique indexes: `{ user: 1, name: 1 }` (unique, case-insensitive collation `strength: 2`, partialFilterExpression `{ isArchived: false }`), `{ user: 1, code: 1 }` (unique, partialFilterExpression `{ isArchived: false }`), directory index `{ user: 1, isArchived: 1, createdAt: -1 }`.
+    - Attached `mongoose-paginate-v2` plugin for uniform pagination envelopes.
+    - Full JSDoc contracts (Protocols 20, 36, 71).
+  - Implemented clean-slate `Report` model (`backend/src/models/Report.js`):
+    - Scoped strictly to `user` (`ref: 'User'`, required, indexed) (Protocol 21).
+    - Dual-calendar temporal grounding: `date`, `dateString` (YYYY-MM-DD), `ethiopianDate` (DD-MM-YY).
+    - Pre-validate hook automatically computing `dateString` and `ethiopianDate` via UTC normalization.
+    - Shift work hours format validation (`clockIn`, `clockOut`) against `REPORT_CONSTANTS.TIME_REGEX`.
+    - Authoritative Amharic operational narrative dossier (`transcription`).
+    - Bounded shift items (`visits`, `activities`, `issues`, `comments`) with `{ _id: false }`, completely abolishing V0's dead `comment.status` field (Directives 4, 5, 6).
+    - Universal multimodal evidentiary asset attachments (`assets: [{ type: ObjectId, ref: 'Asset' }]`) bounded by `MAX_ASSETS` (Directives 3, Protocols 43, 48, 55).
+    - Compound partial unique indexes: `{ user: 1, dateString: 1 }` (unique, partialFilterExpression `{ isArchived: false, dateString: { $type: 'string' } }`), `{ user: 1, ethiopianDate: 1 }` (unique, partialFilterExpression `{ isArchived: false, ethiopianDate: { $type: 'string' } }`).
+    - Compound query indexes: `{ user: 1, date: -1 }`, `{ user: 1, 'visits.branch': 1 }`, `{ user: 1, assets: 1 }`, `{ user: 1, archivedAt: -1 }`.
+    - Attached `mongoose-paginate-v2` plugin for uniform pagination envelopes.
+    - Full JSDoc contracts (Protocols 20, 36, 71).
+  - Updated `backend/src/models/Asset.js`:
+    - Added pre-delete cascading hooks (document `deleteOne`, query `deleteOne`, `findOneAndDelete`) to automatically pull deleted asset references from `Report.assets`.
+  - Updated `backend/src/services/userService.js`:
+    - Updated `executeAccountDeletion` to cascade deletion across `Branch` and `Report` in Tier 1 (Protocol 42).
+  - Updated `backend/tests/integration/testHarness.js`:
+    - Updated `purgeTestUsers()` to cascade deletion across `Branch` and `Report`.
+    - Exported `Branch` and `Report` models (Protocol 68).
+  - Added `test:phase4` script to `backend/package.json` and root `package.json`.
+  - Authored automated integration test suite (`backend/tests/integration/phase4-schema.test.js`):
+    - 26 comprehensive tests validating Branch creation, flattening, case-insensitive collation uniqueness, code uniqueness, soft-archival/re-creation, pagination plugin, alias whitespace trimming, Report creation, dual-calendar auto-derivation, Gregorian and Ethiopian compound uniqueness, report date mutation synchronization, ISO timezone offset normalization, shift hours regex, bounded shift items, universal multimodal assets (`file`, `image`, `audio`), asset population, querying reports by asset ID, max assets ceiling, asset null handling, asset deletion reference cleanup, historical report preservation upon archived branch deletion, and Three-Tier Account Deletion cascading.
+  - Skeptical Reviewer Flaw Eradication (Review Round 5):
+    1. Fixed timezone offset extraction in `toEthiopianDate`: replaced greedy string prefix match with date-only validation (`/^\d{4}-\d{2}-\d{2}$/`) and routed full ISO strings with timezone offsets through UTC date conversion.
+    2. Fixed date mutation desynchronization in `Report.js`: updated `pre('validate')` to recompute `dateString` and `ethiopianDate` when `date` is modified on existing documents.
+    3. Fixed unhandled `TypeError` in `Report.assets` validator when `assets` is set to null.
+    4. Enforced whitespace trimming on individual elements of `Branch.aliases`.
+    5. Added explicit verification of partial compound unique index on `{ user: 1, ethiopianDate: 1 }`.
+    6. Updated historical branch deletion test (5.1) to archive the branch prior to deletion, faithfully matching V0 sweeper architecture.
+  - Multi-Suite Verification Results:
+    - `npm run verify --workspace=backend`: 0 syntax errors across all 30 backend source files, env configuration valid.
+    - `npm run test:phase4 --workspace=backend`: 26/26 PASS (100% green against live MongoDB Atlas replica set).
+    - `npm run test`: 83/83 PASS across all 4 suites (Phase 1: 9/9, Phase 2: 26/26, Phase 3: 22/22, Phase 4: 26/26) against live MongoDB Atlas replica set with verified zero residual test records.
+    - `npm run lint --workspace=client`: 0 ESLint errors, 0 warnings.
+    - `npm run build --workspace=client`: built cleanly with Vite in 466ms (0 errors).
+    - `npm run verify`: 100% clean multi-workspace pass.
   - Strictly enforced Zero Git Commit Gate (Protocol 25 & 59): no git commit executed.
+
 
 
 
