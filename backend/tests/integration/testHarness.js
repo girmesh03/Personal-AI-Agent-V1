@@ -9,6 +9,9 @@ import http from 'node:http';
 import app from '../../src/app.js';
 import { connectDB, disconnectDB } from '../../src/config/db.js';
 import User from '../../src/models/User.js';
+import Chat from '../../src/models/Chat.js';
+import Message from '../../src/models/Message.js';
+import Asset from '../../src/models/Asset.js';
 
 /**
  * Domain regex strictly matching all test user accounts created during integration runs.
@@ -18,13 +21,23 @@ import User from '../../src/models/User.js';
 export const TEST_EMAIL_DOMAIN_REGEX = /@operon-test\.local$/i;
 
 /**
- * Purges all test users belonging to the isolation test domain (*@operon-test.local).
+ * Purges all test users belonging to the isolation test domain (*@operon-test.local)
+ * and cascades deletion across all associated chats, messages, and assets.
  * Guaranteed teardown hygiene ensuring zero database leakage (Protocol 68).
  *
  * @function purgeTestUsers
  * @returns {Promise<import('mongoose').mongo.DeleteResult>} Mongoose delete operation result.
  */
 export const purgeTestUsers = async () => {
+  const testUsers = await User.find({ email: TEST_EMAIL_DOMAIN_REGEX }).select('_id');
+  const userIds = testUsers.map((u) => u._id);
+  if (userIds.length > 0) {
+    await Promise.all([
+      Chat.deleteMany({ user: { $in: userIds } }),
+      Message.deleteMany({ user: { $in: userIds } }),
+      Asset.deleteMany({ user: { $in: userIds } }),
+    ]);
+  }
   return User.deleteMany({ email: TEST_EMAIL_DOMAIN_REGEX });
 };
 
@@ -180,4 +193,4 @@ export class TestClient {
   }
 }
 
-export { connectDB, disconnectDB };
+export { connectDB, disconnectDB, User, Chat, Message, Asset };

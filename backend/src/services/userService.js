@@ -10,6 +10,9 @@
  */
 
 import User from '../models/User.js';
+import Chat from '../models/Chat.js';
+import Message from '../models/Message.js';
+import Asset from '../models/Asset.js';
 import { normalizeTelegramChatId } from '../utils/authUtils.js';
 import {
   NotFoundError,
@@ -709,8 +712,13 @@ export const executeAccountDeletion = async (userId, password) => {
     }
   }
 
-  // Tier 1: Purge user document from MongoDB
-  await User.deleteOne({ _id: userId });
+  // Tier 1: Purge user document and cascade associated chats, messages, and assets (Protocol 42)
+  await Promise.all([
+    User.deleteOne({ _id: userId }),
+    Chat.deleteMany({ user: userId }),
+    Message.deleteMany({ user: userId }),
+    Asset.deleteMany({ user: userId }),
+  ]);
 
   return {
     success: true,

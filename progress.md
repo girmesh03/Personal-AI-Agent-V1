@@ -427,3 +427,94 @@ Use this file as the chronological record of work performed, files changed, vali
   - `npm run verify`: Clean pass across all workspaces.
   - Zero Git Commit Invariant (Protocol 25 & 59) strictly maintained: uncommitted working tree preserved.
 
+---
+
+## Session: 2026-11-20 (Phase 3 Implementation: Chat, Message & Asset Schema Architecture)
+
+### Clean-Slate Schema Implementation & Multi-Suite Verification
+
+- **Status:** complete
+- **Started:** 2026-11-20T02:40:00Z
+- **Completed:** 2026-11-20T03:00:00Z
+- Actions taken:
+  - Implemented clean-slate normalized `Chat` model (`backend/src/models/Chat.js`):
+    - Replaced V0 embedded subdocument arrays with top-level collection referencing `User` (Protocol 21, 58).
+    - Enforced `title` trimming and 100-character ceiling (`default: 'New Conversation'`).
+    - Configured multi-provider defaults (`AI_PROVIDERS.GOOGLE`, `gemini-3.1-flash-lite`, Protocol 63).
+    - Added temperature numeric bounds [0, 2] (default 0.7), pinning (`isPinned`), archiving (`isArchived`), and `lastMessageAt` indexing.
+    - Added cascading pre-deleteOne and pre-findOneAndDelete hooks cleaning associated Messages and Assets.
+    - Added compound indexes: `{ user: 1, isArchived: 1, lastMessageAt: -1 }`, `{ user: 1, isPinned: -1, lastMessageAt: -1 }`.
+  - Implemented normalized `Message` model (`backend/src/models/Message.js`):
+    - Monotonic turn sequence typing enforced by unique compound index `{ chat: 1, sequence: 1 }` (Protocol 49).
+    - LangChain message roles: `'user'`, `'assistant'`, `'system'`, `'tool'`.
+    - Reasoning thought isolation: `thought` and `thoughtDurationMs` separated from `text` body (Protocol 58).
+    - Autonomous tool execution storage: `toolCalls` and `toolResult` conforming to LangChain specs.
+    - Selective HITL interrupt card storage: `interrupt` ({ digest, actionName, payload, status: 'pending'|'approved'|'rejected' }, Protocol 46) strictly optional (`default: undefined`) and populated only on approval-gated tool turns.
+    - Token usage metrics (`usage`) and standardized error envelopes (`error`).
+    - Compound indexes: `{ chat: 1, sequence: 1 }` (unique), `{ chat: 1, createdAt: -1 }`, `{ user: 1, createdAt: -1 }`.
+  - Implemented universal multimodal `Asset` model (`backend/src/models/Asset.js`):
+    - Strict 3-kind taxonomy: `file`, `image`, `audio` (Protocol 55).
+    - Eradicated synthetic `purpose` field: role is derived relationally from referencing entity.
+    - Cloud storage exclusivity: `storageProvider` (`cloudinary` | `google_drive`), `storageKey`, `secureUrl` (Protocol 43).
+    - Protocol 43 defense: Virtual property `path` throwing immediately on any local filesystem path injection.
+    - Audio fields: `duration`, `transcript`, `sttEngine`.
+    - Document fields: `extractedText` for server-side extracted text (grounded RAG, token reduction, and Addis AI provider neutrality, Protocol 48).
+    - Compound indexes: `{ user: 1, kind: 1, createdAt: -1 }`, `{ chat: 1, message: 1 }`, `{ user: 1, checksum: 1 }`.
+  - Synchronized centralized constants in 1-to-1 parity across `backend/src/utils/constants.js` and `client/src/utils/constants.js` (Protocol 8, 27):
+    - Added `ASSET_CONSTANTS`: `KINDS`, `STORAGE_PROVIDERS`, `STATUSES`, `MAX_FILE_SIZES`, `ALLOWED_MIME_TYPES`.
+    - Added `MESSAGE_CONSTANTS`: `ROLES`, `STATUSES`, `MAX_TEXT_LENGTH`, `INTERRUPT_STATUSES`.
+    - Enriched `CHAT_CONSTANTS`: `DEFAULT_TITLE`, `MAX_TITLE_LENGTH`, `DEFAULT_TEMPERATURE`, `MIN_TEMPERATURE`, `MAX_TEMPERATURE`.
+  - Updated `backend/src/services/userService.js`:
+    - Updated `executeAccountDeletion` to cascade deletion across User, Chat, Message, and Asset collections (Protocol 42).
+  - Updated `backend/tests/integration/testHarness.js`:
+    - Updated `purgeTestUsers()` to cascade deletion across Chat, Message, and Asset collections for all `@operon-test.local` users.
+  - Configured deterministic serial execution for multi-file integration runs (`--test-concurrency=1` in `backend/package.json`) to prevent test database collisions across suites on live MongoDB Atlas.
+  - Authored automated integration test suite (`backend/tests/integration/phase3-schema.test.js`):
+    - 18 comprehensive tests validating Chat, Message, Asset, Thought Isolation, HITL, Tool Execution, Cascades, and Guaranteed Teardown Hygiene.
+  - Executed complete multi-suite verification:
+    - `npm run test`: 53/53 tests PASS (Phase 1: 9/9, Phase 2: 26/26, Phase 3: 18/18) with 0 failures against live MongoDB Atlas.
+    - `npm run verify --workspace=backend`: 0 syntax errors across all 27 backend source files, env configuration valid.
+    - `npm run lint --workspace=client`: 0 errors, 0 warnings.
+    - `npm run build --workspace=client`: built cleanly with Vite (0 errors).
+    - `npm run verify`: 100% clean multi-workspace pass.
+  - Strictly enforced Zero Git Commit Gate (Protocol 25 & 59): no git commit executed.
+
+---
+
+## Session: 2026-11-20 (Phase 3 Skeptical Reviewer Verification & Flaw Eradication)
+
+### Skeptical Review & Eradication of Flaws in Phase 3 Attempt
+
+- **Status:** complete
+- **Started:** 2026-11-20T03:05:00Z
+- **Completed:** 2026-11-20T03:15:00Z
+- Actions taken:
+  - Audited code and discovered 4 latent defects and unverified edge cases in prior attempt:
+    1. **Query-Level Deletion Cascading Gap in `Chat.js`**: `Chat.deleteOne({ _id })` and `Chat.deleteMany(...)` bypassed cascading deletion because only document-level `pre('deleteOne', { document: true, query: false })` and `pre('findOneAndDelete')` were registered. Tested and confirmed `Message` and `Asset` documents were orphaned when deleting via Model query methods.
+       - Fix: Registered `chatSchema.pre('deleteOne', { document: false, query: true })` and `chatSchema.pre('deleteMany')` to find matching documents and cascade-delete all associated messages and assets.
+    2. **Missing Integer Constraints on `Message.sequence` (Protocol 49)**: IEEE 754 float `sequence: 1.5` passed validation, violating Protocol 49 (Monotonic Sequence Typing: strictly positive integers 1, 2, 3...).
+       - Fix: Added `validate: { validator: Number.isInteger, message: 'Sequence must be an integer.' }` on `sequence` and `thoughtDurationMs`.
+    3. **Missing Integer Constraint on `Asset.sizeBytes`**: Fractional byte size `sizeBytes: 1024.5` passed validation.
+       - Fix: Added `validate: { validator: Number.isInteger, message: 'File size must be an integer number of bytes.' }` on `sizeBytes`.
+    4. **Dangling Asset References on Asset Deletion**: Deleting an `Asset` left its ObjectId stranded inside `Message.assets`.
+       - Fix: Registered `pre('deleteOne')` (document and query) and `pre('findOneAndDelete')` on `Asset.js` to `$pull` deleted asset IDs from `Message.assets`.
+    5. **Unverified Edge Cases & Test Suite Expansion**: Expanded `backend/tests/integration/phase3-schema.test.js` from 18 to 22 tests (57 tests total across all 3 phases):
+       - Test 19: Validated query-level `Chat.deleteOne({ _id })` and `Chat.deleteMany(...)` cascading deletion of messages and assets.
+       - Test 20: Validated strict rejection of floating-point numbers on `Message.sequence`, `Message.thoughtDurationMs`, and `Asset.sizeBytes`.
+       - Test 21: Validated that deleting an `Asset` automatically pulls its ID from `Message.assets`.
+       - Test 22: Validated 5MB high-capacity `extractedText` document persistence/retrieval and cross-user checksum isolation on compound index `{ user: 1, checksum: 1 }`.
+- Multi-Suite Verification Results:
+  - `npm run test:phase3`: 22/22 PASS (100% green against live Atlas replica set).
+  - `npm run test`: 57/57 PASS across all 3 integration test suites:
+    - Phase 1 Foundation: 9/9 PASS
+    - Phase 2 Authentication & User Domain: 26/26 PASS
+    - Phase 3 Chat, Message & Asset Schema: 22/22 PASS
+  - Verified 0 residual documents remain across `User`, `Chat`, `Message`, and `Asset` collections.
+  - `npm run verify --workspace=backend`: 0 syntax errors across all 27 backend source files, env configuration valid.
+  - `npm run lint --workspace=client`: 0 ESLint errors, 0 warnings.
+  - `npm run build --workspace=client`: built cleanly with Vite in 630ms (0 errors).
+  - `npm run verify`: 100% clean multi-workspace pass.
+  - Strictly enforced Zero Git Commit Gate (Protocol 25 & 59): no git commit executed.
+
+
+

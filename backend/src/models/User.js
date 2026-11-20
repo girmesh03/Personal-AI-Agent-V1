@@ -3,6 +3,7 @@
  * @description Mongoose schema and model definition for the application User.
  * Enforces single-user operational constraints, AES-256-GCM envelope encryption at rest,
  * and canonical directives naming (Protocol 22, Protocol 37).
+ * Serves as parent identity referenced by Chat, Message, and Asset collections (Protocol 21, 58).
  */
 
 import mongoose from 'mongoose';

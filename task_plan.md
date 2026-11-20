@@ -8,11 +8,11 @@ Systematically re-engineer the functional capabilities of historical V0 into a p
 
 ## Next Step
 
-Phase 2 complete, merged into main, synced to remote, and feature branch cleaned up. Ready for Phase 3 input recognition and planning.
+Phase 3 complete, merged into main, synced to remote, and feature branch cleaned up. Ready for Phase 4 (Conversational State Machine, SSE Streaming & Chat Routes) input recognition and planning.
 
 ## Current Phase
 
-Phase 2: Authentication & User Management (Complete & Merged to Main)
+Phase 3: Conversational Intelligence Core — Chat, Message & Asset Schema Architecture (Complete & Merged to Main)
 
 ## Phases
 
@@ -55,8 +55,26 @@ Phase 2: Authentication & User Management (Complete & Merged to Main)
 - [x] Boost Task 9: Universal JSDoc Consistency & Strong Type Contracts Across Non-Theme Runtimes (Protocol 71)
 - [x] Extract Protocols 68 to 71 into `docs/Governing-rules.md`, `AGENTS.md`, `MASTER_PROMPT.md`
 - [x] Verify multi-suite checks: all 35 integration tests PASS (9 in phase 1, 26 in phase 2), backend verify (0 errors), client lint (0 errors, 0 warnings), client build (0 errors)
-- [ ] Await explicit Product Owner authorization before Git commit (Protocol 25 & 59)
-- **Status:** in_progress (implementation & verification complete, awaiting git commit authorization)
+- [x] Product Owner authorized git commit, merge to main, push to origin/main, and feature branch cleanup
+- **Status:** complete
+
+### Phase 3: Chat, Message & Asset Schema Architecture
+
+- [x] Deep audit of historical V0 chat, message, and asset architecture across backend and client
+- [x] Identify all V0 flaws, anti-patterns, and technical debt to eliminate in V1
+- [x] Author comprehensive Phase 3 Implementation Plan artifact at `<appDataDir>/brain/<conversation-id>/phase-3-chat-message-asset-plan.md`
+- [x] Refine Asset.kind to strictly `['file', 'image', 'audio']`, omit synthetic `purpose` field, clarify selective HITL interrupts vs autonomous tool execution, and document real-world multimodal vs extracted document ingestion
+- [x] Create dedicated feature branch `phase-3-chat-message-asset-schema` (Git Protocol compliance)
+- [x] Product Owner review & explicit approval granted (Zero-Code Invariant lifted)
+- [x] Implement normalized `Chat` schema (`backend/src/models/Chat.js`)
+- [x] Implement normalized `Message` schema (`backend/src/models/Message.js`)
+- [x] Implement universal `Asset` schema (`backend/src/models/Asset.js`)
+- [x] Update centralized constants (`ASSET_CONSTANTS`, `MESSAGE_CONSTANTS`, `CHAT_CONSTANTS`) in 1-to-1 parity
+- [x] Author automated integration test suite (`backend/tests/integration/phase3-schema.test.js`)
+- [x] Run full multi-suite verification (all 57 tests pass across 3 suites, backend verify 0 errors, client lint 0 errors/warnings, client build 0 errors)
+- [x] Skeptical review & flaw eradication: fixed query-level cascading deletion in `Chat.js`, enforced integer constraints on `Message.sequence` and `Asset.sizeBytes`, added asset reference cleanup on `Asset` deletion, and expanded tests to 22 tests in Phase 3
+- [x] Product Owner authorized git commit, merge to main, push to origin/main, and feature branch cleanup
+- **Status:** complete
 
 *(Next phases will be appended here as designated by the Product Owner without overriding).*
 

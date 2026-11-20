@@ -229,6 +229,54 @@ Use this file as the durable knowledge base for discoveries, evidence, and decis
   - `MASTER_PROMPT.md` updated the protocol count to 71 but omitted defect eradication sections 3.18, 3.19, 3.20, and 3.21, and only referenced Protocol 24 for HTTP tests in quality verification.
   - Fix: Appended sections 3.18 (Protocol 68), 3.19 (Protocol 69), 3.20 (Protocol 70), and 3.21 (Protocol 71) to `MASTER_PROMPT.md`, updated Section 6 to mandate Dual-Modality Testing (Protocols 24, 68), and synchronized `AGENTS.md` verification gates.
 
+---
+
+## Phase 3: Chat, Message & Asset Schema Architecture Findings
+
+### 1. Zero Subdocument Message Arrays (Protocol 58)
+- Replaced V0's fatal embedded array `chatSchema.messages: [messageTurnSchema]` with first-class normalized `Message` collection.
+- Eliminates MongoDB 16MB document size limit and in-memory `$slice` projection churn.
+- Guaranteed ordering via unique compound index `{ chat: 1, sequence: 1 }` (Protocol 49).
+
+### 2. Universal 3-Kind Taxonomy & Cloud Storage Exclusivity (Protocol 43, 55)
+- All binary media mapped to strict 3-kind taxonomy: `file`, `image`, `audio`.
+- Eradicated synthetic `purpose` field: role is established relationally by referencing document (Protocol 55).
+- Cloud storage exclusivity: media stored exclusively in Cloudinary or Google Drive via `storageKey` and `secureUrl`.
+- Local filesystem paths (`path`) strictly prohibited via defensive virtual property throwing on any local path injection (Protocol 43).
+- Dual preservation: pristine original binary URL preserved alongside server-side extracted text (`extractedText`) for grounded RAG and provider neutrality (Protocol 48).
+
+### 3. Selective HITL vs Autonomous Tool Execution (Protocol 46)
+- Standard/safe tools (searches, lookups) execute autonomously with `toolCalls` and `toolResult`, leaving `interrupt: undefined`.
+- Sensitive/destructive mutations trigger LangGraph `interrupt()`, storing cryptographic SHA-256 digest card in `Message.interrupt`.
+
+### 4. Test Concurrency & Database Teardown Hygiene (Protocol 68)
+- Running multiple test suites against live MongoDB Atlas concurrently resulted in race conditions during database purging.
+- Solution: Configured `--test-concurrency=1` in `backend/package.json` for deterministic serial test suite execution.
+- In `testHarness.js`, `purgeTestUsers()` cascades deletion across `Chat`, `Message`, and `Asset` collections, guaranteeing zero residual test documents.
+
+### 5. Skeptical Reviewer Audit & Latent Bug Eradication (Review Round 4)
+- **Defect 1 — Query-Level Deletion Cascading Gap in `Chat.js` (Protocols 21, 42, 58)**:
+  - In `backend/src/models/Chat.js`, only document-level `chatSchema.pre('deleteOne', { document: true, query: false })` and `pre('findOneAndDelete')` were defined.
+  - Calling `Chat.deleteOne({ _id: chatId })` or `Chat.deleteMany({ user: userId })` at the query level bypassed the cascading hook completely, leaving all associated `Message` and `Asset` documents orphaned in MongoDB Atlas.
+  - Fix: Registered query-level middleware `chatSchema.pre('deleteOne', { document: false, query: true })` and `chatSchema.pre('deleteMany')` to find matching documents and cascade-delete all associated messages and assets.
+- **Defect 2 — Missing Integer Constraints on `Message.sequence` (Protocol 49)**:
+  - `Message.js` defined `sequence: { type: Number, min: 1 }`. Because IEEE 754 floating point numbers satisfy `1.5 >= 1`, non-integer sequences like `1.5` were accepted, violating monotonic sequence integrity.
+  - Fix: Added `validate: { validator: Number.isInteger, message: 'Sequence must be an integer.' }` on `sequence` and `thoughtDurationMs`.
+- **Defect 3 — Missing Integer Constraint on `Asset.sizeBytes`**:
+  - `Asset.js` allowed fractional file sizes (`sizeBytes: 1024.5`).
+  - Fix: Added `validate: { validator: Number.isInteger, message: 'File size must be an integer number of bytes.' }` on `sizeBytes`.
+- **Defect 4 — Dangling Asset References on Asset Deletion**:
+  - Deleting an `Asset` left stranded ObjectId references inside any referencing `Message.assets` arrays.
+  - Fix: Registered `pre('deleteOne')` (document and query) and `pre('findOneAndDelete')` hooks on `Asset.js` to `$pull` deleted asset IDs from `Message.assets`.
+- **Defect 5 — Test Coverage Expansion & Edge Case Probing (Protocol 68)**:
+  - Added 4 new automated integration tests in `backend/tests/integration/phase3-schema.test.js` (total 22 tests in Phase 3, 57 tests total):
+    1. Query-level `Chat.deleteOne` and `Chat.deleteMany` cascading deletion verification.
+    2. Monotonic sequence and byte size integer rejection for floating-point values.
+    3. Asset deletion cascading reference cleanup from `Message.assets`.
+    4. 5MB high-capacity `extractedText` document persistence and cross-user checksum isolation on compound index `{ user: 1, checksum: 1 }`.
+
+
+
 
 
 

@@ -18,6 +18,7 @@
     "test:backend": "npm run test --workspace=backend",
     "test:phase1": "npm run test:phase1 --workspace=backend",
     "test:phase2": "npm run test:phase2 --workspace=backend",
+    "test:phase3": "npm run test:phase3 --workspace=backend",
     "test:all": "npm run test:all --workspace=backend"
   }
 }

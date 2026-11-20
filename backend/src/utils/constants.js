@@ -194,6 +194,11 @@ export const CHAT_CONSTANTS = Object.freeze({
   SUPPORTED_PROVIDERS: Object.freeze([AI_PROVIDERS.GOOGLE, AI_PROVIDERS.ADDIS]),
   DEFAULT_MODEL: AI_MODELS[AI_PROVIDERS.GOOGLE].DEFAULT,
   SUPPORTED_MODELS: SUPPORTED_AI_MODELS,
+  DEFAULT_TITLE: 'New Conversation',
+  MAX_TITLE_LENGTH: 100,
+  DEFAULT_TEMPERATURE: 0.7,
+  MIN_TEMPERATURE: 0,
+  MAX_TEMPERATURE: 2,
   STT_ENGINES: Object.freeze([
     STT_ENGINES.ADDIS_AI,
     STT_ENGINES.GEMINI_FLASH,
@@ -206,6 +211,62 @@ export const CHAT_CONSTANTS = Object.freeze({
   DEFAULT_LANGUAGE: 'auto',
   SUPPORTED_LANGUAGES: Object.freeze(['auto', 'am', 'en']),
   DEFAULT_PERSONA: 'Professional Operational Assistant',
+});
+
+/**
+ * Universal multimodal asset configuration boundaries, storage providers, and MIME types.
+ * @constant
+ */
+export const ASSET_CONSTANTS = Object.freeze({
+  KINDS: Object.freeze(['file', 'image', 'audio']),
+  STORAGE_PROVIDERS: Object.freeze(['cloudinary', 'google_drive']),
+  STATUSES: Object.freeze(['uploading', 'ready', 'failed']),
+  DEFAULT_STORAGE_PROVIDER: 'cloudinary',
+  DEFAULT_STATUS: 'ready',
+  MAX_FILE_SIZES: Object.freeze({
+    IMAGE: 10 * 1024 * 1024,
+    AUDIO: 25 * 1024 * 1024,
+    FILE: 50 * 1024 * 1024,
+    DEFAULT: 25 * 1024 * 1024,
+  }),
+  ALLOWED_MIME_TYPES: Object.freeze({
+    IMAGE: Object.freeze([
+      'image/jpeg',
+      'image/png',
+      'image/webp',
+      'image/svg+xml',
+      'image/gif',
+    ]),
+    AUDIO: Object.freeze([
+      'audio/mpeg',
+      'audio/wav',
+      'audio/webm',
+      'audio/ogg',
+      'audio/mp4',
+    ]),
+    FILE: Object.freeze([
+      'application/pdf',
+      'text/plain',
+      'text/csv',
+      'application/json',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    ]),
+  }),
+});
+
+/**
+ * Conversational message boundaries, roles, and streaming lifecycle statuses.
+ * @constant
+ */
+export const MESSAGE_CONSTANTS = Object.freeze({
+  ROLES: Object.freeze(['user', 'assistant', 'system', 'tool']),
+  STATUSES: Object.freeze(['streaming', 'completed', 'interrupted', 'cancelled', 'error']),
+  DEFAULT_ROLE: 'user',
+  DEFAULT_STATUS: 'completed',
+  MAX_TEXT_LENGTH: 50000,
+  INTERRUPT_STATUSES: Object.freeze(['pending', 'approved', 'rejected']),
+  DEFAULT_INTERRUPT_STATUS: 'pending',
 });
 
 /**
